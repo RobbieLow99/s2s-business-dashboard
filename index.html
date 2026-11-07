@@ -200,6 +200,42 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
 .rank { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--bg-2); color: var(--fg-2); }
 .rank.r1 { background: #F2B33D; color: #2a1d00; } .rank.r2 { background: #C9D3E0; color: #111; } .rank.r3 { background: #C98B5A; color: #1d0f04; }
 .outside-pay { display: grid; gap: 6px; border-color: rgba(242,179,61,.5); background: linear-gradient(135deg, rgba(242,179,61,.10), transparent 70%), var(--panel); }
+
+.brand-text .brand-kicker { display: block; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-2); }
+.brand-text b { font-size: 15px !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coach-logo { width: 34px; height: 34px; border-radius: 8px; object-fit: contain; background: #fff; flex: none; }
+
+@media (max-width: 600px) {
+  .funnel .f-row { grid-template-columns: 1fr auto auto !important; gap: 4px 10px; }
+  .funnel .f-row .f-track { grid-column: 1 / -1; grid-row: 2; height: 14px; }
+  .funnel .f-row .f-val { grid-column: 2; grid-row: 1; }
+  .funnel .f-row .f-rate { grid-column: 3; grid-row: 1; }
+  .funnel { gap: 12px; }
+  .card { padding: 14px; }
+  .kpi.big .kpi-value { font-size: 26px; }
+  .big-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .big-row .spark { width: 100%; max-width: none; height: 26px; }
+  .kpi-foot { flex-direction: column; gap: 2px; }
+  .brand-text .brand-kicker { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .verdict { padding: 16px; }
+  .verdict h1 { font-size: 24px; }
+  .hero-fix h2 { font-size: 18px; }
+  .big-sentence { font-size: 17px; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .stat-v { font-size: 19px; }
+  .cmp-row { grid-template-columns: 1fr 64px; }
+  .cmp-row .cmp-track { grid-column: 1 / -1; grid-row: 2; }
+  .msg-head .row { width: 100%; }
+  .msg-head .pill { white-space: normal; text-align: left; }
+  .risk { flex-direction: column; }
+  .subtabs .subtab { flex: 1 1 auto; }
+  .monday h3 { font-size: 14px; }
+  .section-head { align-items: flex-start; }
+  .channel-tabs .soon { display: none; }
+  .channel-tabs .subtab[data-ch]:not([data-ch="paid"]) { opacity: .7; }
+}
+.detail-box, #detail { min-width: 0; }
+.speed-strip > .stat { min-width: 0; }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -485,6 +521,11 @@ async function signIn(code) {
   }
 }
 const loadAdmin = async () => { S.admin = await rpc("kpi_admin_all", { p_code: S.code }); };
+const displayName = c => c?.sync_info?.brand?.name || c?.business || c?.name || "";
+function brandMark(c) {
+  const url = c?.sync_info?.brand?.logo;
+  return url && /^https:\/\//.test(url) ? `<img class="coach-logo" src="${esc(url)}" alt="" onerror="this.replaceWith(document.createRange().createContextualFragment(window.__s2sLogo))">` : logo();
+}
 function logo() {
   return `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7038E6"/><stop offset="1" stop-color="#A47BFF"/></linearGradient></defs><path d="M16 3 L29 27 H3 Z" fill="none" stroke="url(#lg)" stroke-width="2.2" stroke-linejoin="round"/><path d="M8.2 21.5 H23.8 M10.8 16.8 H21.2 M13.4 12.1 H18.6" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
@@ -508,7 +549,7 @@ function render() {
   else { tabs = [["dash", "Business"], ["ads", "Marketing"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
   app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
-      <div class="brand">${logo()}<div class="brand-text"><b>SYSTEMS TO SCALE BUSINESS DASHBOARD</b><span>${esc(S.viewing ? (c.business || c.name) : me.is_admin ? "Systems to Scale · all coaches" : (c.business || c.name))}</span></div></div>
+      <div class="brand">${brandMark(S.viewing || !me.is_admin ? c : null)}<div class="brand-text"><span class="brand-kicker">Systems to Scale · Business Dashboard</span><b>${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
       <button class="btn-ghost" id="logout">Log out</button></div>
     <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</nav></div></header>
   <main class="wrap" id="main"></main>`;
@@ -1196,6 +1237,7 @@ function viewManage(main) {
   main.appendChild(sec);
 }
 
+window.__s2sLogo = logo();
 boot();
 </script>
 </body>
