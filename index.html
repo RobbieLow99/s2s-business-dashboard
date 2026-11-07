@@ -199,6 +199,7 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
 .board .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--bg-2); color: var(--fg-2); }
 .rank.r1 { background: #F2B33D; color: #2a1d00; } .rank.r2 { background: #C9D3E0; color: #111; } .rank.r3 { background: #C98B5A; color: #1d0f04; }
+.outside-pay { display: grid; gap: 6px; border-color: rgba(242,179,61,.5); background: linear-gradient(135deg, rgba(242,179,61,.10), transparent 70%), var(--panel); }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -619,6 +620,13 @@ function viewDash(main) {
         <div class="${realMonths >= 2 ? "done" : ""}"><b>After your first full month</b><span>Growth vs churn, month-on-month changes and lifetime value</span></div>
         <div class="${M.s12.spend_weeks ? "done" : ""}"><b>Once you enter ad spend</b><span>Cost per lead, cost to acquire a client and return on ad spend</span></div>
       </div>`));
+  }
+
+  // payments outside the CRM: say so plainly instead of showing broken numbers
+  const noCrmPayments = sy && n(info.retention?.members_ever) === 0 && rows.some(w => n(w.leads));
+  if (noCrmPayments) {
+    main.appendChild(el("section", "card outside-pay", `<span class="eyebrow">Heads up</span><h3>Your payments aren't going through the CRM</h3>
+      <p class="muted small">We can see your leads, calls and trials, but not who pays you, so paying members, revenue, lifetime value and return on ad spend can't be worked out. Take payments through the CRM's Stripe and they fill in automatically. Until then, you can enter members and revenue yourself on the Money tab.</p>`));
   }
 
   // 1. verdict
