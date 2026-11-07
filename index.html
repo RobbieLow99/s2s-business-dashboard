@@ -276,6 +276,21 @@ td.ex-cell { color: var(--ok); font-style: italic; }
   .since { grid-template-columns: repeat(3, 1fr); } .since .since-when { grid-column: 1 / -1; }
   .tabs { grid-template-columns: repeat(4, 1fr); } .tab { padding: 8px 4px; font-size: 12px; }
 }
+.v-figs { display: flex; gap: 34px; flex-wrap: wrap; margin-top: 8px; }
+.v-figs div { display: grid; }
+.v-figs b { font-size: clamp(30px, 5vw, 44px); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.v-figs b.up { color: #7BE3B9; } .v-figs b.down { color: #FF9AA8; }
+.v-figs span { font-size: 13px; color: var(--fg-2); font-weight: 600; }
+.verdict h1 { font-size: clamp(20px, 2.6vw, 26px) !important; color: var(--fg) !important; }
+.health.centred .kpi { text-align: center; justify-items: center; }
+.health.centred .kpi-foot { justify-content: center; flex-direction: column; align-items: center; gap: 2px; }
+.prio-list { display: grid; gap: 10px; }
+.hero-fix { grid-template-columns: auto 1fr; align-items: start; gap: 14px; }
+.hero-fix > div { display: grid; gap: 6px; }
+.prio-n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px; background: rgba(255,255,255,.1); }
+.hero-fix.small h2 { font-size: 16px; }
+.hero-fix.small p { font-size: 13px; }
+.filter-row { margin-bottom: 12px; }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -590,7 +605,7 @@ function render() {
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
   app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
       <div class="top-left">${S.viewing ? `<button class="back-btn" id="back" aria-label="Back to all coaches">‹ All coaches</button>` : ""}</div>
-      <div class="brand"><div class="brand-text"><span class="brand-kicker">Systems to Scale · Business Dashboard</span><b class="biz-name">${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
+      <div class="brand"><div class="brand-text"><span class="brand-kicker">Systems to Scale</span><b class="biz-name">${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
       <div class="top-right"><button class="btn-ghost" id="logout">Log out</button></div></div>
     <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</nav></div></header>
   <main class="wrap" id="main"></main>`;
@@ -679,11 +694,11 @@ function sinceStrip(M) {
 }
 function verdict(M) {
   const d = M.members !== null && M.membersPrev !== null ? M.members - M.membersPrev : M.net;
-  if (d === null) return { cls: "flat", head: "Your numbers are filling in", sub: "" };
+  if (d === null) return { cls: "flat", title: "Your numbers are filling in", head: "Your numbers are filling in", sub: "" };
   const mon = monthShort(M.nowKey);
-  if (d > 0) return { cls: "up", head: `You're growing: +${d} member${d === 1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, up from ${fmt(M.membersPrev ?? M.members - d, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}.` };
-  if (d < 0) return { cls: "down", head: `You're shrinking: ${d} member${d === -1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, down from ${fmt(M.membersPrev, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}. More are leaving than joining.` };
-  return { cls: "flat", head: `Holding steady in ${mon}`, sub: `${fmt(M.members, "int")} paying members. Flat isn't growing: the fix below is how you move it.` };
+  if (d > 0) return { cls: "up", title: "You're growing", head: `You're growing: +${d} member${d === 1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, up from ${fmt(M.membersPrev ?? M.members - d, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}.` };
+  if (d < 0) return { cls: "down", title: "You're shrinking", head: `You're shrinking: ${d} member${d === -1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, down from ${fmt(M.membersPrev, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}. More are leaving than joining.` };
+  return { cls: "flat", title: "Holding steady", head: `Holding steady in ${mon}`, sub: `${fmt(M.members, "int")} paying members. Flat isn't growing: the fix below is how you move it.` };
 }
 function viewDash(main) {
   const c = coachInView(), M = model(c), { T, rows, info, sy, hist, RT, iss } = M;
@@ -728,16 +743,20 @@ function viewDash(main) {
 
   // 1. verdict
   const V = verdict(M);
-  main.appendChild(el("section", `verdict ${V.cls}`, `<div><span class="eyebrow">${greeting(c)}</span><h1>${esc(V.head)}</h1>${revenueLines(M)}</div>${sy ? `<span class="tiny">Live from your CRM · ${ago(c.last_sync)}</span>` : ""}`));
+  const dMem = M.members !== null && M.membersPrev !== null ? M.members - M.membersPrev : M.net;
+  const lostMrr = M.mrrLost !== null ? M.mrrLost : null, leftN = M.nowM ? M.nowM.left : 0;
+  main.appendChild(el("section", `verdict ${V.cls}`, `<div class="v-main"><span class="eyebrow">${greeting(c)}</span><h1>${esc(V.title)}</h1>
+    <div class="v-figs">${dMem !== null ? `<div><b class="${dMem > 0 ? "up" : dMem < 0 ? "down" : ""}">${dMem > 0 ? "+" : ""}${dMem}</b><span>member${Math.abs(dMem) === 1 ? "" : "s"} in ${monthShort(M.nowKey)}</span></div>` : ""}${M.mrrChange !== null ? `<div><b class="${M.mrrChange > 0 ? "up" : M.mrrChange < 0 ? "down" : ""}">${M.mrrChange >= 0 ? "+" : "−"}${fmt(Math.abs(M.mrrChange), "gbp0")}</b><span>MRR in ${monthShort(M.nowKey)}</span></div>` : ""}</div>
+    ${lostMrr ? `<p class="churn-line down">${fmt(lostMrr, "gbp0")} of MRR lost to churn this month (${leftN} cancellation${leftN === 1 ? "" : "s"}).</p>` : ""}</div>${sy ? `<span class="tiny">Live from your CRM · ${ago(c.last_sync)}</span>` : ""}`));
 
   main.insertAdjacentHTML("beforeend", sinceStrip(M));
 
   // 2. four numbers that matter
   const spend12 = M.s12.spend_weeks ? M.s12.ad_spend : null;
   const back = spend12 ? M.s12.new_clients * RT.ltv / spend12 : null;
-  const big = el("section", "section", `<div class="health">
-    ${bigTile("Paying members", fmt(M.members, "int"), (M.membersPrev !== null ? `${fmt(M.membersPrev, "int")} at the end of ${monthShort(M.prevKey)}` : ""), spark(hist.map(m => m.members)), "none", pctDelta(M.members, M.membersPrev, ""))}
-    ${bigTile("Monthly recurring revenue", fmt(sy ? M.mrr : M.nowM?.revenue, "gbp0"), sy ? `${fmt(RT.fee, "gbp0")} average per member` : "", spark(hist.map(m => sy ? n(m.a.mrr) : m.revenue)), "none", sy && M.prevM ? pctDelta(M.mrr, n(M.prevM.a.mrr), "£") : "")}
+  const big = el("section", "section", `<div class="health centred">
+    ${bigTile("Paying members", fmt(M.members, "int"), M.membersPrev !== null ? `vs ${fmt(M.membersPrev, "int")} at the end of ${monthShort(M.prevKey)}` : "", "", "none", pctDelta(M.members, M.membersPrev, ""))}
+    ${bigTile("Monthly recurring revenue", fmt(sy ? M.mrr : M.nowM?.revenue, "gbp0"), sy && M.prevM ? `vs ${fmt(n(M.prevM.a.mrr), "gbp0")} at the end of ${monthShort(M.prevKey)}` : "", "", "none", sy && M.prevM ? pctDelta(M.mrr, n(M.prevM.a.mrr), "£") : "")}
     ${M.lastFull ? bigTile(`Profit last month (${monthShort(M.lastFull.month)})`, fmt(M.lastFull.profit, "gbp0"), `${fmt(M.lastFull.margin, "pct")} margin · revenue minus all costs`, "", rag("margin", M.lastFull.margin, T), (() => { const pm = M.months.filter(m => m.month < M.lastFull.month && m.profit !== null).pop(); return pm ? pctDelta(M.lastFull.profit, pm.profit, "£") : ""; })())
       : S.me.is_admin && M.prevM?.revenue ? bigTile(`Profit last month (${monthShort(M.prevKey)})`, fmt(M.prevM.revenue * 0.38, "gbp0") + ' <span class="ex">example</span>', "38% margin · example until costs are entered", "", "good")
       : bigTile("Profit last month", "—", readOnly() ? "no costs entered yet" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add last month's costs</a>: revenue minus all costs`, "")}
@@ -754,17 +773,18 @@ function viewDash(main) {
   big.querySelector("#add-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "money"; render(); });
 
   // 3. fix this first
-  const [first, ...rest] = iss;
-  main.appendChild(el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">This week's priority</span><p class="tiny">One thing at a time: the biggest thing costing you clients or money right now, pulled from your CRM. Sort it and the next one moves up.</p></div></div>
-    ${first ? `<div class="hero-fix ${first.sev}"><h2>${esc(first.title)}</h2><p>${esc(first.body)}</p>${crmLink(M.c, first.key) ? `<a class="crm-link" href="${crmLink(M.c, first.key)}" target="_blank" rel="noopener">${crmLabel(first.key)} ›</a>` : ""}</div>` : `<div class="hero-fix good"><h2>Nothing's leaking right now</h2><p>Every step is on target for the last 4 weeks. This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div>`}
-    ${rest.length ? `<details class="more next-up"><summary>${rest.length} more ${rest.length === 1 ? "priority" : "priorities"} after this one</summary><div class="fixes compact">${rest.map(i => `<div class="fix ${i.sev}"><span class="dot"></span><div><h3>${esc(i.title)}</h3></div></div>`).join("")}</div></details>` : ""}`));
+  const top3 = iss.slice(0, 3);
+  main.appendChild(el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">This week's priorities</span><p class="tiny">The biggest things costing you clients or money right now, pulled from your CRM.</p></div></div>
+    ${top3.length ? `<div class="prio-list">${top3.map((p, i) => `<div class="hero-fix ${p.sev} ${i ? "small" : ""}"><span class="prio-n">${i + 1}</span><div><h2>${esc(p.title)}</h2><p>${esc(p.body)}</p>${crmLink(M.c, p.key) ? `<a class="crm-link" href="${crmLink(M.c, p.key)}" target="_blank" rel="noopener">${crmLabel(p.key)} ›</a>` : ""}</div></div>`).join("")}</div>`
+      : `<div class="hero-fix good"><div><h2>Nothing's leaking right now</h2><p>Every step is on target for the last 4 weeks. This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div></div>`}`));
 
   // 5. two charts that tell the story
-  const charts = el("div", "two divided");
-  const c1 = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">Client growth</span><h3>Paying members by month</h3></div></div>`);
+  main.appendChild(el("div", "section-head divided", `<div><span class="eyebrow">Client growth</span></div>`));
+  const charts = el("div", "two");
+  const c1 = el("section", "card section", `<div class="section-head"><div><h3>Paying members by month</h3></div></div>`);
   c1.appendChild(membersChart(hist, 0));
   const last12 = []; for (let i = 11; i >= 0; i--) { const wk = iso(addDays(lastMonday(), -7 * i)); last12.push({ wk, w: rows.find(x => x.week_start === wk) }); }
-  const c2 = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">Client growth</span><h3>Joined vs left, by month</h3></div><div class="legend"><span><i style="background:var(--good)"></i>Joined</span><span><i style="background:var(--bad)"></i>Left</span></div></div>`);
+  const c2 = el("section", "card section", `<div class="section-head"><div><h3>Signed vs churned, by month</h3></div><div class="legend"><span><i style="background:var(--good)"></i>Signed</span><span><i style="background:var(--bad)"></i>Churned</span></div></div>`);
   c2.appendChild(joinLeaveChart(hist.map(m => ({ label: monthShort(m.month), full: monthLabel(m.month), j: m.joined, l: m.left }))));
   charts.appendChild(c1); charts.appendChild(c2);
   main.appendChild(charts);
@@ -772,7 +792,7 @@ function viewDash(main) {
   // 6. detail tabs
   const tabsD = [["funnel", "Funnel"], ["year", "Month by month"], ["weeks", "Week by week"], ["compare", "Vs other coaches"]];
   if (!S.detail || !tabsD.some(t => t[0] === S.detail)) S.detail = "funnel";
-  const det = el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">The detail</span><h2>Where to look next</h2></div></div>
+  const det = el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">Breakdown</span><h2>Your numbers in detail</h2></div></div>
     <div class="subtabs" role="tablist">${tabsD.map(([k, l]) => `<button class="subtab" role="tab" data-d="${k}" aria-selected="${S.detail === k}">${l}</button>`).join("")}</div><div id="detail"></div>`);
   main.appendChild(det);
   det.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { S.detail = b.dataset.d; render(); document.getElementById("detail")?.scrollIntoView({ block: "nearest" }); }));
@@ -794,8 +814,7 @@ function detailFunnel(box, M) {
   const leakStep = steps.find(s => s.k && s.k === leak);
   const topV = Math.max(1, ...steps.map(s => cur[s.f]));
   const SP = speedStrip(M);
-  box.innerHTML = `${SP}<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><p class="tiny">${c.flow === "nocall" ? "No-call flow: lead → trial spot held → confirmed (replied YES) → attended → client. " : "Call flow: lead → call booked → call attended → trial → client. "}Change your flow in Settings. Lead to client overall: <b style="color:var(--fg)">${fmt(pct(cur.new_clients, cur.leads), "pct")}</b>${prev ? ` · ▲▼ = change on the ${R.label.replace("last ", "")} before that` : ""}</p>
-    ${seg("period", [...SEG4, ["tw", "This week"]], S.period)}</div>
+  box.innerHTML = `<div class="filter-row">${seg("period", [...SEG4, ["tw", "This week"]], S.period)}</div>${SP}<div class="card"><p class="tiny" style="margin-bottom:12px">Lead to client: <b style="color:var(--fg)">${fmt(pct(cur.new_clients, cur.leads), "pct")}</b>${prev ? ` · ▲▼ vs the ${R.label.replace("last ", "")} before` : ""}</p>
   <div class="funnel">${steps.map(s => {
     const v = s.k ? D[s.k] : null, r = s.k ? rag(s.k, v, T) : "none", now = cur[s.f], isLeak = s.k && s.k === leak;
     return `<div class="f-row ${isLeak ? "leak" : ""}"><span class="f-label">${s.l}${prev ? ` <span class="f-delta">${delta(now, prev[s.f], "high")}</span>` : ""}</span><div class="f-track"><div class="f-bar" style="width:${Math.min(100, now / topV * 100)}%"></div></div><span class="f-val">${fmt(now, "int")}</span>
@@ -810,7 +829,7 @@ function detailYear(box, M) {
   const ms = first < 0 ? [] : M.months.slice(first);
   if (!ms.length) { box.innerHTML = `<div class="card"><p class="muted small">No months yet.</p></div>`; return; }
   const tot = ms.reduce((a, m) => (a.j += m.joined, a.l += m.left, a.r += n(m.revenue), a.sp += m.s.spend_weeks ? m.s.ad_spend : 0, a.p += m.profit ?? 0, a.pn += m.profit !== null ? 1 : 0, a), { j: 0, l: 0, r: 0, sp: 0, p: 0, pn: 0 });
-  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Every month since ${sy ? "your CRM was connected" : "you started tracking"} (${monthLabel(ms[0].month)}). Kept for good, so this becomes your year-on-year record. Profit = all revenue minus all costs (including ad spend). Margin = profit as a % of revenue. Both show once that month's costs are entered on the Money tab.${S.me.is_admin ? ' <span class="ex">example</span> = made-up numbers so you can see the layout; only you see them.' : ""}</p>
+  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Every month since ${monthLabel(ms[0].month)}. Profit and margin show once you add that month's costs on the Money tab.${S.me.is_admin ? ' <span class="ex">example</span> = made-up numbers so you can see the layout; only you see them.' : ""}</p>
   <div class="table-wrap"><table><thead><tr><th>Month</th><th>Members at end</th><th>Joined</th><th>Left</th><th>Net</th>${sy ? "<th>Recurring revenue</th>" : ""}<th>Revenue taken</th><th>Ad spend</th><th>Profit</th><th>Margin</th></tr></thead><tbody>
   ${ms.slice().reverse().map(m => { const net = m.joined - m.left; return `<tr><td>${monthLabel(m.month)}${m.month === M.nowKey ? " (so far)" : ""}</td><td>${fmt(m.members, "int")}</td><td class="c-good">+${m.joined}</td><td class="${m.left ? "c-bad" : ""}">${m.left ? "−" + m.left : "0"}</td><td class="${net > 0 ? "c-good" : net < 0 ? "c-bad" : ""}">${net > 0 ? "+" : ""}${net}</td>${sy ? `<td>${fmt(n(m.a.mrr), "gbp0")}</td>` : ""}<td>${fmt(m.revenue, "gbp0")}</td><td>${m.s.spend_weeks ? fmt(m.s.ad_spend, "gbp0") : "—"}</td>${m.profit === null && S.me.is_admin && n(m.revenue) ? `<td class="ex-cell">${fmt(m.revenue * 0.38, "gbp0")}</td><td class="ex-cell">38%</td>` : `<td>${fmt(m.profit, "gbp0")}</td><td class="c-${rag("margin", m.margin, T)}">${fmt(m.margin, "pct")}</td>`}</tr>`; }).join("")}
   <tr class="total"><td>Total</td><td>${fmt(ms[ms.length - 1].members, "int")}</td><td>+${tot.j}</td><td>${tot.l ? "−" + tot.l : "0"}</td><td>${tot.j - tot.l > 0 ? "+" : ""}${tot.j - tot.l}</td>${sy ? "<td></td>" : ""}<td>${fmt(tot.r, "gbp0")}</td><td>${tot.sp ? fmt(tot.sp, "gbp0") : "—"}</td><td>${tot.pn ? fmt(tot.p, "gbp0") : "—"}</td><td></td></tr>
@@ -870,7 +889,7 @@ function detailCompare(box, M) {
       <div class="cmp-track">${pos(avg) !== null ? `<span class="cmp-mark avg" style="left:${pos(avg)}%"><i>avg ${fmt(avg, "pct")}</i></span>` : ""}${pos(top) !== null ? `<span class="cmp-mark top" style="left:${pos(top)}%"><i>best 25% ${fmt(top, "pct")}</i></span>` : ""}${pos(me) !== null ? `<div class="cmp-bar ${better}" style="width:${pos(me)}%"></div>` : ""}</div>
       <div class="cmp-you ${better}">${fmt(me, "pct")}<small>you</small></div></div>`;
   }).join("");
-  box.innerHTML = `<div class="card section"><p class="tiny">Last 3 months. Your bar against the S2S average and the best 25% of S2S coaches. Anonymous: no coach's name or numbers are ever shown. Based on ${fmt(B.coaches, "int")} coach${B.coaches === 1 ? "" : "es"}.${B.coaches < 5 ? " Coaches see this once 5 or more are connected." : ""}</p><div class="cmp">${rowsB}</div></div>`;
+  box.innerHTML = `<div class="card section"><p class="tiny">Last 3 months, against the S2S average and the best 25% of coaches. Anonymous.${B.coaches < 5 ? ` Coaches see this once 5+ are connected (${B.coaches} now).` : ""}</p><div class="cmp">${rowsB}</div></div>`;
 }
 function greeting(c) { const h = new Date().getHours(); return (h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening") + ", " + esc(firstName(c)); }
 function membersChart(hist, goal) {
@@ -932,15 +951,16 @@ function paidAds(main) {
   const cpl = spend !== null && adLeads ? spend / adLeads : null;
   const roas = spend ? cur.new_clients * RT.ltv / spend : null;
   const periods = [["4w", "Last 4 weeks"], ["13w", "Last 3 months"], ["26w", "Last 6 months"]];
-  const head = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Paid ads</span><h2>Are your ads working?</h2></div>
-    ${seg("ads-period", SEG4, S.adsPeriod)}</div>
-  <div class="health">
+  const head = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Paid ads</span><h2>Are your ads working?</h2></div></div>
+  <div class="filter-row">${seg("ads-period", SEG4, S.adsPeriod)}</div>
+  <div class="health centred">
     ${bigTile("Ad spend", fmt(spend, "gbp0"), spend === null ? "not entered yet" : cur.spend_weeks < cur.weeks ? `${cur.spend_weeks} of ${cur.weeks} weeks entered` : R.label)}
-    ${bigTile("Leads from ads", fmt(adLeads, "int"), sy ? `of ${fmt(cur.leads, "int")} leads in total` : "")}
-    ${bigTile("Cost per lead", fmt(cpl, "gbp"), `target ${tgt(T.cpl)}`, "", rag("cpl", cpl, T))}
-    ${bigTile("Return on ad spend", roas === null ? "—" : roas.toFixed(1) + "x", roas === null ? "needs ad spend" : `£${roas.toFixed(2)} back per £1 · first month ${D.fm_roas === null ? "—" : D.fm_roas.toFixed(1) + "x"}`, "", rag("lt_roas", roas, T))}
+    ${bigTile("Total leads", fmt(cur.leads, "int"), sy ? `${fmt(adLeads, "int")} from ads` : "")}
+    ${bigTile("Cost per lead", fmt(cpl, "gbp"), `ad leads only · target ${tgt(T.cpl)}`, "", rag("cpl", cpl, T))}
+    ${bigTile("ROAS", D.fm_roas === null ? "—" : D.fm_roas.toFixed(1) + "x", D.fm_roas === null ? "needs ad spend" : `£${D.fm_roas.toFixed(2)} back per £1 in the first month`, "", rag("fm_roas", D.fm_roas, T))}
   </div>
   <div class="stats">
+    ${stat("lifetime ROAS", roas === null ? "—" : roas.toFixed(1) + "x", roas === null ? "needs ad spend" : `£${roas.toFixed(2)} back per £1 over a client's lifetime`, rag("lt_roas", roas, T))}
     ${stat("cost to acquire a client (CAC)", fmt(D.cost_per_client, "gbp0"), `ad spend ÷ new clients · target ${tgt(T.cost_per_client)}`, rag("cost_per_client", D.cost_per_client, T))}
     ${stat("lifetime value per client", (RT.floor ? "at least " : "") + fmt(RT.ltv, "gbp0"), `what ROAS is worked out from: ${fmt(RT.fee, "gbp0")} a month × ${RT.months >= 24 ? "24+" : RT.months.toFixed(0)} months`)}
   </div>`);
@@ -985,7 +1005,7 @@ function spendChart(pts, sy) {
   const sp = pts.map(p => p.w && has(p.w.ad_spend) ? n(p.w.ad_spend) : null);
   const al = pts.map(p => p.w ? (sy ? n(p.w.leads_paid) : n(p.w.leads)) : 0);
   const cpl = sp.map((v, i) => v !== null && al[i] ? v / al[i] : null);
-  if (!sp.some(v => v !== null)) { card.innerHTML = `<p class="muted small">Enter some weekly ad spend and this chart appears.</p>`; return card; }
+  if (!sp.some(v => v !== null)) { card.innerHTML = `<p class="muted small">${readOnly() ? "No ad spend entered yet. The coach adds it in the Monday box on the Business tab, or in \"Ad spend week by week\" below." : "No ad spend yet. Add it in the Monday box on the Business tab, or open \"Ad spend week by week\" below and type each week in."}</p>`; return card; }
   const maxS = Math.max(50, ...sp.filter(v => v !== null)) * 1.15, maxC = Math.max(5, ...cpl.filter(v => v !== null)) * 1.25;
   const band = (W - L - Rr) / pts.length, bw = band * .55, x = i => L + band * i + band / 2;
   const ys = v => Tt + (H - Tt - B) * (1 - v / maxS), yc = v => Tt + (H - Tt - B) * (1 - v / maxC);
@@ -1055,8 +1075,8 @@ function viewChannel(main, ch) {
   const R = periodRange(S.chPeriod);
   const inPeriod = def.mode === "week" ? all.filter(e => e.key >= iso(R.from) && e.key <= iso(addDays(R.to, 7))) : all.filter(e => (e.data.date || e.key) >= iso(R.from));
   const s = channelSum(inPeriod, def), K = def.key(s);
-  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">${def.name}</span><h2>${def.name} tracker</h2><p class="tiny">${esc(def.how)}</p></div>
-    ${seg("ch-period", SEG4, S.chPeriod)}</div>
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">${def.name}</span><h2>${def.name} tracker</h2><p class="tiny">${esc(def.how)}</p></div></div>
+  <div class="filter-row">${seg("ch-period", SEG4, S.chPeriod)}</div>
   ${all.length ? `<div class="health">${def.tiles(s).map(([l, v, f]) => bigTile(l, v, f)).join("")}</div>
   <div class="card key-stat"><span class="kpi-value">${K[1]}</span><div><b>${esc(K[0])}</b><p class="tiny">${esc(K[2])}</p></div></div>` : `<div class="card"><p class="muted small">Nothing logged yet. Add your first ${def.mode === "week" ? "week" : "blast"} below and your numbers appear here.</p></div>`}
   <p class="tiny">${esc(def.tip)}</p>`);
