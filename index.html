@@ -109,6 +109,11 @@ input[type="number"] { font-variant-numeric: tabular-nums; }
 .stat-l { font-size: 12px; font-weight: 600; color: var(--fg-2); }
 .stat-s { font-size: 11px; color: var(--fg-3); }
 .stat-s a { color: var(--accent-2); }
+.goal { display: grid; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.goal-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 15px; }
+.goal-track { height: 12px; background: rgba(28,49,80,.7); border-radius: 999px; overflow: hidden; }
+.goal-bar { height: 100%; background: linear-gradient(90deg, var(--accent-deep), var(--accent-2)); border-radius: 999px; }
+.spend-in { width: 92px; padding: 5px 8px; font-size: 13px; text-align: right; }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -283,8 +288,25 @@ function derive(s, c) {
     hold_rate: pct(s.trials_held, s.leads), confirm_rate: pct(s.trials_booked, s.trials_held),
     show_rate: pct(s.trials_attended, s.trials_booked), trial_to_client: pct(s.new_clients, s.trials_attended),
     cpl: spend === null ? null : div(spend, s.leads), cost_per_client: spend === null ? null : div(spend, s.new_clients),
-    fm_roas: spend === null ? null : div(s.first_month, spend), lt_roas: spend === null ? null : div(s.first_month * Math.max(1, n(c.avg_months)), spend),
+    fm_roas: spend === null ? null : div(s.first_month, spend), lt_roas: spend === null ? null : div(s.new_clients * retention(c).ltv, spend),
   };
+}
+/* real retention from the coach's CRM subscriptions */
+function retention(c) {
+  const r = c.sync_info?.retention, info = c.sync_info || {};
+  if (!synced(c) || !r || !r.members_ever) {
+    const months = Math.max(1, n(c.avg_months));
+    return { real: false, fee: n(c.avg_fee), months, churn: 100 / months, ltv: n(c.avg_fee) * months, floor: false, note: "your estimate (connect the CRM for the real number)" };
+  }
+  const fee = n(info.members_now) ? n(info.mrr_now) / n(info.members_now) : n(r.avg_fee);
+  const spanMonths = r.since ? Math.max(0.5, (Date.now() - parseISO(r.since)) / (30.44 * 864e5)) : null;
+  const note = `from ${fmt(r.members_ever, "int")} members over ${spanMonths ? (spanMonths < 1.5 ? "1 month" : Math.round(spanMonths) + " months") : "your"} CRM data`;
+  if (r.cancellations > 0 && r.member_months > 0) {
+    const churn = r.cancellations / r.member_months * 100, months = 100 / churn;
+    return { real: true, fee, churn, months, ltv: fee * months, floor: false, note };
+  }
+  const months = Math.max(1, r.member_months / r.members_ever);
+  return { real: true, fee, churn: 0, months, ltv: fee * months, floor: true, note: note + ", no cancellations yet" };
 }
 function periodRange(p) {
   const lm = lastMonday();
@@ -361,6 +383,7 @@ async function signIn(code) {
     S.me = await rpc("kpi_me", { p_code: code }); S.code = code;
     try { localStorage.setItem("s2s_dash_code", code); } catch (e) {}
     if (S.me.is_admin) { S.tab = "admin"; await loadAdmin(); }
+    try { S.bench = await rpc("kpi_benchmarks", { p_code: code }); } catch (e) { S.bench = null; }
     render();
   } catch (e) {
     try { localStorage.removeItem("s2s_dash_code"); } catch (er) {}
@@ -466,8 +489,8 @@ function viewDash(main) {
   const newThisMonth = nowM ? nowM.s.new_clients : 0, lostThisMonth = nowM ? nowM.s.cancellations : 0;
   const R4 = periodRange("4w"), s4 = sumWeeks(inRange(rows, R4.from, R4.to), c), p4 = sumWeeks(inRange(rows, R4.prevFrom, R4.prevTo), c);
   const churnAvg = (() => { const xs = months.filter(m => m.churn !== null && m.churn !== undefined).slice(-3); return xs.length ? xs.reduce((a, m) => a + m.churn, 0) / xs.length : null; })();
-  const avgFee = members && sy ? mrrNow / Math.max(1, n(nowM?.a?.members_end)) : n(c.avg_fee);
-  const ltv = avgFee * Math.max(1, n(c.avg_months));
+  const RT = retention(c), avgFee = RT.fee, ltv = RT.ltv;
+  const churnShown = RT.real ? RT.churn : churnAvg;
   const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">How the business is running</span><h2>${greeting(c)}</h2></div>${sy ? `<span class="tiny">Live from your CRM · updated ${ago(c.last_sync)}</span>` : ""}</div>
   <div class="health">
     ${bigTile("Paying members", fmt(members, "int"), membersPrev !== null ? `${fmt(membersPrev, "int")} at the end of ${monthShort(prevKey)}` : "", spark(hist.map(m => m.members)), "none", delta(members, membersPrev, "high"))}
@@ -477,13 +500,20 @@ function viewDash(main) {
   </div>
   <div class="stats">
     ${stat("average fee per member", fmt(avgFee, "gbp0"), sy ? "MRR ÷ members" : "from Settings")}
-    ${stat("lifetime value per client", fmt(ltv, "gbp0"), `${fmt(n(c.avg_months), "int")}-month average stay`)}
-    ${stat("monthly churn", fmt(churnAvg, "pct"), `target ${tgt(T.churn)}`, rag("churn", churnAvg, T))}
+    ${stat("lifetime value per client", (RT.floor ? "at least " : "") + fmt(ltv, "gbp0"), `stays ${RT.months >= 24 ? "2 years+" : RT.months.toFixed(1) + " months"} · ${esc(RT.note)}`)}
+    ${stat("monthly churn", RT.real && RT.floor ? "0%" : fmt(churnShown, "pct"), `target ${tgt(T.churn)}`, RT.real && RT.floor ? "good" : rag("churn", churnShown, T))}
     ${stat("new clients, last 4 weeks", fmt(s4.new_clients, "int"), p4.weeks ? `${fmt(p4.new_clients, "int")} the 4 weeks before` : "")}
     ${stat("failed payments to chase", fmt(n(info.past_due), "int"), sy ? "unpaid right now" : "", n(info.past_due) ? "ok" : "none")}
     ${lastFull ? stat(`profit in ${monthShort(lastFull.month)}`, fmt(lastFull.profit, "gbp0"), `${fmt(lastFull.margin, "pct")} margin`, rag("margin", lastFull.margin, T))
       : stat("profit", "—", readOnly() ? "no costs yet" : `<a href="#" id="add-costs">add costs</a>`)}
   </div>`);
+  const goal = n((c.targets || {}).member_goal);
+  if (goal > 0 && members !== null) {
+    const netPerMonth = (() => { const xs = hist.slice(-3).map(m => m.s.new_clients - m.s.cancellations); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0; })();
+    const gap = goal - members;
+    const when = gap <= 0 ? "Target hit. Time to set a bigger one." : netPerMonth > 0 ? `At your current pace (+${netPerMonth.toFixed(1)} a month) you'll get there around ${new Date(new Date().getFullYear(), new Date().getMonth() + Math.ceil(gap / netPerMonth), 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}.` : "At your current pace you won't get there. You need more new clients than cancellations every month.";
+    sec.appendChild(el("div", "goal", `<div class="goal-top"><span><b>${fmt(members, "int")}</b> of <b>${fmt(goal, "int")}</b> members</span><span class="tiny">${gap > 0 ? `${fmt(gap, "int")} to go · about ${Math.ceil(gap / 3)} a month to get there in 3 months` : ""}</span></div><div class="goal-track"><div class="goal-bar" style="width:${Math.min(100, members / goal * 100)}%"></div></div><p class="tiny">${esc(when)}</p>`));
+  }
   main.appendChild(sec);
   sec.querySelector("#add-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "money"; render(); });
 
@@ -533,7 +563,7 @@ function viewDash(main) {
       ${stat("cost to get a client", fmt(D.cost_per_client, "gbp0"), `target ${tgt(T.cost_per_client)}`, rag("cost_per_client", D.cost_per_client, T))}
       ${stat("first-month fees from new clients", fmt(cur.first_month, "gbp0"), `${fmt(cur.new_clients, "int")} new clients`)}
       ${stat("first-month ROAS", fmt(D.fm_roas, "x"), `target ${tgt(T.fm_roas)}`, rag("fm_roas", D.fm_roas, T))}
-      ${stat("lifetime ROAS", fmt(D.lt_roas, "x"), `target ${tgt(T.lt_roas)}`, rag("lt_roas", D.lt_roas, T))}
+      ${stat("lifetime ROAS", fmt(D.lt_roas, "x"), `${fmt(cur.new_clients, "int")} clients × ${fmt(retention(c).ltv, "gbp0")} lifetime value`, rag("lt_roas", D.lt_roas, T))}
     </div>`));
   main.appendChild(two);
 
@@ -550,10 +580,30 @@ function viewDash(main) {
   // ---- 6. week by week ----
   const wk8 = last12.slice(-8).reverse();
   const cols = [["Leads", "leads"], ...(c.flow === "nocall" ? [["Held", "trials_held"]] : [["Calls booked", "calls_booked"], ["Calls attended", "calls_attended"]]), ["Trials booked", "trials_booked"], ["Trials attended", "trials_attended"], ["New clients", "new_clients"], ["Cancelled", "cancellations"]];
-  main.appendChild(el("section", "section", `<div class="section-head"><div><span class="eyebrow">Week by week</span><h2>Last 8 weeks</h2></div></div>
+  const wt = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Week by week</span><h2>Last 8 weeks</h2>${readOnly() ? "" : `<p class="tiny">Type or fix any week's ad spend straight into the table. It saves when you click away.</p>`}</div></div>
   <div class="table-wrap"><table><thead><tr><th>Week</th>${cols.map(x => `<th>${x[0]}</th>`).join("")}<th>Ad spend</th><th>Cost per lead</th></tr></thead><tbody>
-  ${wk8.map(({ wk, w }) => `<tr><td>${weekLabel(wk)}</td>${cols.map(x => `<td>${w ? fmt(n(w[x[1]]), "int") : "—"}</td>`).join("")}<td>${w && has(w.ad_spend) ? fmt(n(w.ad_spend), "gbp0") : "—"}</td><td>${w && has(w.ad_spend) && n(w.leads) ? fmt(n(w.ad_spend) / n(w.leads), "gbp") : "—"}</td></tr>`).join("")}
-  </tbody></table></div>`));
+  ${wk8.map(({ wk, w }) => `<tr><td>${weekLabel(wk)}</td>${cols.map(x => `<td>${w ? fmt(n(w[x[1]]), "int") : "—"}</td>`).join("")}<td>${readOnly() ? (w && has(w.ad_spend) ? fmt(n(w.ad_spend), "gbp0") : "—") : `<input class="spend-in" data-wk="${wk}" type="number" inputmode="decimal" min="0" step="0.01" placeholder="£" value="${w && has(w.ad_spend) ? esc(w.ad_spend) : ""}" aria-label="Ad spend ${weekLabel(wk)}">`}</td><td>${w && has(w.ad_spend) && n(w.leads) ? fmt(n(w.ad_spend) / n(w.leads), "gbp") : "—"}</td></tr>`).join("")}
+  </tbody></table></div>`);
+  main.appendChild(wt);
+  wt.querySelectorAll(".spend-in").forEach(inp => inp.addEventListener("change", async () => {
+    try { S.me = await rpc("kpi_save_week", { p_code: S.code, p_week: inp.dataset.wk, p_data: { ad_spend: inp.value } }); toast(`Saved ad spend for ${weekLabel(inp.dataset.wk)}`); render(); }
+    catch (er) { toast("Didn't save. Check your connection and try again.", true); }
+  }));
+
+  // ---- 7. benchmarks ----
+  const B = S.bench;
+  if (B && (B.coaches >= 5 || S.me.is_admin)) {
+    const R12 = periodRange("12w"), s12 = sumWeeks(inRange(rows, R12.from, R12.to), c);
+    const mine = { show_rate: pct(s12.trials_attended, s12.trials_booked), trial_to_client: pct(s12.new_clients, s12.trials_attended), lead_to_client: pct(s12.new_clients, s12.leads), called_5min: info.calls_tracked ? pct(s12.called_5min, s12.leads) : null, churn: RT.real && !RT.floor ? RT.churn : null };
+    const labels = { show_rate: "Trial show rate", trial_to_client: "Trial → client", lead_to_client: "Lead → client", called_5min: "Called within 5 min", churn: "Monthly churn" };
+    const rowsB = Object.keys(labels).filter(k => B[k] && B[k].n > 0).map(k => {
+      const low = k === "churn", me = mine[k], avg = B[k].avg, top = B[k].top;
+      const cls = me === null || Math.abs(me - avg) < 1 ? "" : (low ? me < avg : me > avg) ? "c-good" : "c-bad";
+      return `<tr><td>${labels[k]}</td><td class="${cls}">${fmt(me, "pct")}</td><td>${fmt(avg, "pct")}</td><td>${fmt(top, "pct")}</td></tr>`;
+    }).join("");
+    main.appendChild(el("section", "section", `<div class="section-head"><div><span class="eyebrow">How you compare</span><h2>You against other S2S coaches</h2><p class="tiny">Last 12 weeks. Anonymous: no coach's name or numbers are ever shown. Based on ${fmt(B.coaches, "int")} coach${B.coaches === 1 ? "" : "es"} with CRM data.${B.coaches < 5 ? " Coaches only see this once 5 or more are connected." : ""}</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th></th><th>You</th><th>S2S average</th><th>${"Top 25%"}</th></tr></thead><tbody>${rowsB}</tbody></table></div>`));
+  }
 }
 function greeting(c) { const h = new Date().getHours(); return (h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening") + ", " + esc(firstName(c)); }
 function monthChart(hist) {
@@ -685,7 +735,8 @@ function viewSettings(main) {
     <label for="s-business">Business name<input id="s-business" value="${esc(c.business)}" ${dis}></label>
     <label for="s-flow">Booking flow<select id="s-flow" ${dis}><option value="call" ${c.flow === "call" ? "selected" : ""}>Call flow (discovery calls)</option><option value="nocall" ${c.flow === "nocall" ? "selected" : ""}>No-call flow (straight to trial)</option></select></label>
     <label for="s-fee">Average monthly fee (£)<input id="s-fee" type="number" min="0" step="0.01" value="${esc(c.avg_fee)}" ${dis}></label>
-    <label for="s-months">Months a client stays <small>Average. Used for lifetime ROAS</small><input id="s-months" type="number" min="1" step="0.5" value="${esc(c.avg_months)}" ${dis}></label>
+    <label for="s-goal">Member target <small>How many paying members you're aiming for</small><input id="s-goal" type="number" min="0" step="1" value="${esc((c.targets || {}).member_goal ?? "")}" ${dis}></label>
+    ${synced(c) ? "" : `<label for="s-months">Months a client stays <small>Your estimate until the CRM is connected</small><input id="s-months" type="number" min="1" step="0.5" value="${esc(c.avg_months)}" ${dis}></label>`}
   </div></div>
   <div class="form-group"><details class="more"><summary>Targets</summary>
     <p class="tiny" style="margin-bottom:12px">Green at or better than "on target", amber up to "warning", red past it. These start as Robbie's numbers.</p>
@@ -696,8 +747,9 @@ function viewSettings(main) {
   main.appendChild(sec);
   sec.querySelector("#set-form").addEventListener("submit", async e => {
     e.preventDefault(); const f = e.target, targets = {};
+    if (f.querySelector("#s-goal").value !== "") targets.member_goal = +f.querySelector("#s-goal").value;
     for (const k of keys) { const g = +f.querySelector(`#t-${k}-g`).value, o = +f.querySelector(`#t-${k}-o`).value; if (g !== METRICS[k].good || o !== METRICS[k].ok) targets[k] = { good: g, ok: o }; }
-    try { S.me = await rpc("kpi_save_settings", { p_code: S.code, p_data: { name: f.querySelector("#s-name").value, business: f.querySelector("#s-business").value, flow: f.querySelector("#s-flow").value, avg_fee: f.querySelector("#s-fee").value, avg_months: f.querySelector("#s-months").value, targets } }); toast("Settings saved"); render(); }
+    try { S.me = await rpc("kpi_save_settings", { p_code: S.code, p_data: { name: f.querySelector("#s-name").value, business: f.querySelector("#s-business").value, flow: f.querySelector("#s-flow").value, avg_fee: f.querySelector("#s-fee").value, avg_months: f.querySelector("#s-months")?.value ?? "", targets } }); toast("Settings saved"); render(); }
     catch (er) { toast("Didn't save. Try again.", true); }
   });
 }
