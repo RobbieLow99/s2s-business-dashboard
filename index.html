@@ -172,6 +172,9 @@ input[type="number"] { font-variant-numeric: tabular-nums; }
 .cmp-you.good { color: var(--good); } .cmp-you.bad { color: var(--bad); }
 .meta-card { display: grid; gap: 8px; border-style: dashed; }
 .ticks { margin: 0; padding-left: 18px; color: var(--fg-2); font-size: 14px; display: grid; gap: 4px; }
+main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
+.channel-tabs { margin-top: -10px; }
+.soon { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -369,7 +372,7 @@ function retention(c) {
 function periodRange(p) {
   const lm = lastMonday();
   const weeks = { "4w": 4, "12w": 12, "13w": 13, "26w": 26 }[p];
-  if (weeks) { const from = addDays(lm, -7 * (weeks - 1)); return { from, to: lm, prevFrom: addDays(from, -7 * weeks), prevTo: addDays(from, -7), label: weeks === 13 ? "last quarter" : weeks === 26 ? "last 6 months" : `last ${weeks} weeks` }; }
+  if (weeks) { const from = addDays(lm, -7 * (weeks - 1)); return { from, to: lm, prevFrom: addDays(from, -7 * weeks), prevTo: addDays(from, -7), label: weeks === 13 ? "last 3 months" : weeks === 26 ? "last 6 months" : `last ${weeks} weeks` }; }
   return { from: thisMonday(), to: thisMonday(), label: "this week so far" };
 }
 const inRange = (rows, a, b) => rows.filter(w => w.week_start >= iso(a) && w.week_start <= iso(b));
@@ -470,10 +473,10 @@ function render() {
   const me = S.me, c = coachInView();
   let tabs;
   if (me.is_admin && !S.viewing) tabs = [["admin", "All coaches"], ["manage", "Coaches & links"]];
-  else { tabs = [["dash", "Business"], ["ads", "Ads"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
+  else { tabs = [["dash", "Business"], ["ads", "Marketing"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
   app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
-      <div class="brand">${logo()}<div class="brand-text"><b>BUSINESS DASHBOARD</b><span>${esc(S.viewing ? (c.business || c.name) : me.is_admin ? "Systems to Scale · all coaches" : (c.business || c.name))}</span></div></div>
+      <div class="brand">${logo()}<div class="brand-text"><b>SYSTEMS TO SCALE BUSINESS DASHBOARD</b><span>${esc(S.viewing ? (c.business || c.name) : me.is_admin ? "Systems to Scale · all coaches" : (c.business || c.name))}</span></div></div>
       <button class="btn-ghost" id="logout">Log out</button></div>
     <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</nav></div></header>
   <main class="wrap" id="main"></main>`;
@@ -526,7 +529,7 @@ function model(c) {
   const R12 = periodRange("13w"), s12 = sumWeeks(inRange(rows, R12.from, R12.to), c), D12 = derive(s12, c);
   const members = nowM?.members ?? null, membersPrev = prevM?.members ?? null;
   const net = nowM ? nowM.joined - nowM.left : null;
-  const goal = n((c.targets || {}).member_goal);
+  const goal = n((c.targets || {}).revenue_goal);
   return { c, T, rows, info, sy, months, hist, nowM, prevM, lastFull, RT, s4, p4, s12, D12, members, membersPrev, net, goal, nowKey, prevKey,
     mrr: sy ? n(info.mrr_now) + n(nowM?.m?.other_revenue) : null, iss: issues(c),
     mrrChange: sy && prevM ? n(info.mrr_now) - n(prevM.a.mrr) : null, mrrAdded: nowM ? (sy && has(nowM.a.fees_joined) ? n(nowM.a.fees_joined) : nowM.s.first_month) : null, mrrLost: nowM && sy && has(nowM.a.fees_left) ? n(nowM.a.fees_left) : null };
@@ -540,8 +543,8 @@ function verdict(M) {
   const d = M.members !== null && M.membersPrev !== null ? M.members - M.membersPrev : M.net;
   if (d === null) return { cls: "flat", head: "Your numbers are filling in", sub: "" };
   const mon = monthShort(M.nowKey);
-  if (d > 0) return { cls: "up", head: `You're growing: +${d} member${d === 1 ? "" : "s"} in ${mon}`, sub: `${fmt(M.members, "int")} paying members, up from ${fmt(M.membersPrev ?? M.members - d, "int")} at the end of ${monthShort(M.prevKey)}.` };
-  if (d < 0) return { cls: "down", head: `You're shrinking: ${d} member${d === -1 ? "" : "s"} in ${mon}`, sub: `${fmt(M.members, "int")} paying members, down from ${fmt(M.membersPrev, "int")}. More are leaving than joining.` };
+  if (d > 0) return { cls: "up", head: `You're growing: +${d} member${d === 1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, up from ${fmt(M.membersPrev ?? M.members - d, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}.` };
+  if (d < 0) return { cls: "down", head: `You're shrinking: ${d} member${d === -1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, down from ${fmt(M.membersPrev, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}. More are leaving than joining.` };
   return { cls: "flat", head: `Holding steady in ${mon}`, sub: `${fmt(M.members, "int")} paying members. Flat isn't growing: the fix below is how you move it.` };
 }
 function viewDash(main) {
@@ -572,37 +575,38 @@ function viewDash(main) {
   const spend12 = M.s12.spend_weeks ? M.s12.ad_spend : null;
   const back = spend12 ? M.s12.new_clients * RT.ltv / spend12 : null;
   const big = el("section", "section", `<div class="health">
-    ${bigTile("Paying members", fmt(M.members, "int"), M.goal ? `target ${fmt(M.goal, "int")}` : (M.membersPrev !== null ? `${fmt(M.membersPrev, "int")} at the end of ${monthShort(M.prevKey)}` : ""), spark(hist.map(m => m.members)), "none", delta(M.members, M.membersPrev, "high"))}
+    ${bigTile("Paying members", fmt(M.members, "int"), (M.membersPrev !== null ? `${fmt(M.membersPrev, "int")} at the end of ${monthShort(M.prevKey)}` : ""), spark(hist.map(m => m.members)), "none", delta(M.members, M.membersPrev, "high"))}
     ${bigTile("Monthly recurring revenue", fmt(sy ? M.mrr : M.nowM?.revenue, "gbp0"), sy ? `${fmt(RT.fee, "gbp0")} average per member` : "", spark(hist.map(m => sy ? n(m.a.mrr) : m.revenue)))}
     ${M.lastFull ? bigTile(`Profit last month (${monthShort(M.lastFull.month)})`, fmt(M.lastFull.profit, "gbp0"), `${fmt(M.lastFull.margin, "pct")} margin · revenue minus all costs`, "", rag("margin", M.lastFull.margin, T))
       : bigTile("Profit last month", "—", readOnly() ? "no costs entered yet" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add last month's costs</a>: revenue minus all costs`, "")}
-    ${bigTile("Return on ad spend", back === null ? "—" : back.toFixed(1) + "x", back === null ? "add your ad spend to see this" : `£${back.toFixed(2)} back for every £1 · lifetime · last quarter`, "", back === null ? "none" : rag("lt_roas", back, T))}
+    ${bigTile("Return on ad spend", back === null ? "—" : back.toFixed(1) + "x", back === null ? "add your ad spend to see this" : `£${back.toFixed(2)} back for every £1 · lifetime · last 3 months`, "", back === null ? "none" : rag("lt_roas", back, T))}
   </div>`);
-  if (M.goal > 0 && M.members !== null) {
-    const netPerMonth = (() => { const xs = hist.slice(-3).map(m => m.joined - m.left); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0; })();
-    const gap = M.goal - M.members;
-    const when = gap <= 0 ? "Target hit. Time to set a bigger one." : netPerMonth > 0 ? `At your current pace (+${netPerMonth.toFixed(1)} a month) you'll hit it around ${new Date(new Date().getFullYear(), new Date().getMonth() + Math.ceil(gap / netPerMonth), 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}.` : "At your current pace you won't get there. You need more joining than leaving every month.";
-    big.appendChild(el("div", "goal", `<div class="goal-top"><span><b>${fmt(M.members, "int")}</b> of <b>${fmt(M.goal, "int")}</b> members</span><span class="tiny">${gap > 0 ? `${fmt(gap, "int")} to go` : ""}</span></div><div class="goal-track"><div class="goal-bar" style="width:${Math.min(100, M.members / M.goal * 100)}%"></div></div><p class="tiny">${esc(when)}</p>`));
+  if (M.goal > 0 && M.mrr !== null) {
+    const ms = hist.slice(-4).map(m => n(m.a?.mrr));
+    const perMonth = ms.length > 1 ? (ms[ms.length - 1] - ms[0]) / (ms.length - 1) : 0;
+    const gap = M.goal - M.mrr, perMember = RT.fee || n(c.avg_fee);
+    const when = gap <= 0 ? "Target hit. Time to set a bigger one." : perMonth > 0 ? `At your current pace (+${fmt(perMonth, "gbp0")} a month) you'll hit it around ${new Date(new Date().getFullYear(), new Date().getMonth() + Math.ceil(gap / perMonth), 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}.` : "At your current pace you won't get there. You need more revenue joining than leaving every month.";
+    big.appendChild(el("div", "goal", `<div class="goal-top"><span><b>${fmt(M.mrr, "gbp0")}</b> of your <b>${fmt(M.goal, "gbp0")}</b> a month target</span><span class="tiny">${gap > 0 ? `${fmt(gap, "gbp0")} to go · about ${Math.ceil(gap / Math.max(1, perMember))} more members at ${fmt(perMember, "gbp0")}, or put your prices up` : ""}</span></div><div class="goal-track"><div class="goal-bar" style="width:${Math.min(100, M.mrr / M.goal * 100)}%"></div></div><p class="tiny">${esc(when)}</p>`));
   }
   main.appendChild(big);
   big.querySelector("#add-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "money"; render(); });
 
   // 3. fix this first
   const [first, ...rest] = iss;
-  main.appendChild(el("section", "section", `<div class="section-head"><div><span class="eyebrow">Fix this first</span></div></div>
+  main.appendChild(el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">This week's priorities</span><p class="tiny">What's costing you clients or money right now, worst first. Pulled from your CRM: missed calls, leads not called, appointments not marked, failed payments and the weakest step in your funnel.</p></div></div>
     ${first ? `<div class="hero-fix ${first.sev}"><h2>${esc(first.title)}</h2><p>${esc(first.body)}</p></div>` : `<div class="hero-fix good"><h2>Nothing's leaking right now</h2><p>Every step is on target for the last 4 weeks. This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div>`}
-    ${rest.length ? `<p class="tiny" style="margin-top:4px">Then these, in order:</p><div class="fixes compact">${rest.slice(0, 3).map(i => `<div class="fix ${i.sev}"><span class="dot"></span><div><h3>${esc(i.title)}</h3></div></div>`).join("")}</div>` : ""}`));
+    ${rest.length ? `<p class="tiny" style="margin-top:4px">Then fix these, in order of importance:</p><div class="fixes compact">${rest.slice(0, 3).map(i => `<div class="fix ${i.sev}"><span class="dot"></span><div><h3>${esc(i.title)}</h3></div></div>`).join("")}</div>` : ""}`));
 
   // 4. ads in one sentence
   const life = M.s12.new_clients * RT.ltv;
   main.appendChild(el("section", "card ads-line", spend12
-    ? `<span class="eyebrow">Last quarter</span><p class="big-sentence"><b>${fmt(spend12, "gbp0")}</b> on ads → <b>${fmt(M.s12.new_clients, "int")}</b> new clients → <b>${fmt(life, "gbp0")}</b> over their lifetime.</p><p class="muted small">Every £1 you put into ads brings back <b style="color:var(--fg)">£${(life / spend12).toFixed(2)}</b>. Lifetime value per client: ${RT.floor ? "at least " : ""}${fmt(RT.ltv, "gbp0")} (${esc(RT.note)}).</p>`
-    : `<span class="eyebrow">Last quarter</span><p class="big-sentence"><b>${fmt(M.s12.new_clients, "int")}</b> new clients → <b>${fmt(life, "gbp0")}</b> over their lifetime.</p><p class="muted small">Add your ad spend each Monday and this tells you exactly what every £1 on ads brings back. Lifetime value per client: ${RT.floor ? "at least " : ""}${fmt(RT.ltv, "gbp0")} (${esc(RT.note)}).</p>`));
+    ? `<span class="eyebrow">Last 3 months</span><p class="big-sentence"><b>${fmt(spend12, "gbp0")}</b> on ads → <b>${fmt(M.s12.new_clients, "int")}</b> new clients → <b>${fmt(life, "gbp0")}</b> over their lifetime.</p><p class="muted small">Every £1 you put into ads brings back <b style="color:var(--fg)">£${(life / spend12).toFixed(2)}</b>. That's because the average member pays you ${RT.floor ? "at least " : ""}<b style="color:var(--fg)">${fmt(RT.ltv, "gbp0")}</b> over the time they stay (${fmt(RT.fee, "gbp0")} a month for about ${RT.months >= 24 ? "2 years+" : RT.months.toFixed(0) + " months"}).</p>`
+    : `<span class="eyebrow">Last 3 months</span><p class="big-sentence"><b>${fmt(M.s12.new_clients, "int")}</b> new clients → <b>${fmt(life, "gbp0")}</b> over their lifetime.</p><p class="muted small">The average member pays you ${RT.floor ? "at least " : ""}<b style="color:var(--fg)">${fmt(RT.ltv, "gbp0")}</b> over the time they stay (${fmt(RT.fee, "gbp0")} a month for about ${RT.months >= 24 ? "2 years+" : RT.months.toFixed(0) + " months"}, worked out from your own members). Add your ad spend each Monday and this shows what every £1 on ads brings back.</p>`));
 
   // 5. two charts that tell the story
-  const charts = el("div", "two");
-  const c1 = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">The business</span><h3>Paying members by month</h3></div>${M.goal ? `<div class="legend"><span><i style="background:var(--good)"></i>Target</span></div>` : ""}</div>`);
-  c1.appendChild(membersChart(hist, M.goal));
+  const charts = el("div", "two divided");
+  const c1 = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">The business</span><h3>Paying members by month</h3></div></div>`);
+  c1.appendChild(membersChart(hist, 0));
   const last12 = []; for (let i = 11; i >= 0; i--) { const wk = iso(addDays(lastMonday(), -7 * i)); last12.push({ wk, w: rows.find(x => x.week_start === wk) }); }
   const c2 = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">Growth vs churn</span><h3>Joined and left, by month</h3></div><div class="legend"><span><i style="background:var(--good)"></i>Joined</span><span><i style="background:var(--bad)"></i>Left</span></div></div>`);
   c2.appendChild(joinLeaveChart(hist.map(m => ({ label: monthShort(m.month), full: monthLabel(m.month), j: m.joined, l: m.left }))));
@@ -610,14 +614,14 @@ function viewDash(main) {
   main.appendChild(charts);
 
   // 6. detail tabs
-  const tabsD = [["funnel", "Funnel"], ["speed", "Speed to lead"], ["weeks", "Week by week"], ["compare", "How you compare"]];
+  const tabsD = [["funnel", "Funnel"], ["year", "Month by month"], ["speed", "Speed to lead"], ["weeks", "Week by week"], ["compare", "How you compare"]];
   if (!S.detail) S.detail = "funnel";
-  const det = el("section", "section", `<div class="section-head"><div><span class="eyebrow">The detail</span><h2>Where to look next</h2></div></div>
+  const det = el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">The detail</span><h2>Where to look next</h2></div></div>
     <div class="subtabs" role="tablist">${tabsD.map(([k, l]) => `<button class="subtab" role="tab" data-d="${k}" aria-selected="${S.detail === k}">${l}</button>`).join("")}</div><div id="detail"></div>`);
   main.appendChild(det);
   det.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { S.detail = b.dataset.d; render(); document.getElementById("detail")?.scrollIntoView({ block: "nearest" }); }));
   const box = det.querySelector("#detail");
-  ({ funnel: detailFunnel, speed: detailSpeed, weeks: detailWeeks, compare: detailCompare })[S.detail](box, M, last12);
+  ({ funnel: detailFunnel, year: detailYear, speed: detailSpeed, weeks: detailWeeks, compare: detailCompare })[S.detail](box, M, last12);
 }
 function detailFunnel(box, M) {
   const { c, T, rows } = M;
@@ -632,8 +636,8 @@ function detailFunnel(box, M) {
   for (const s of steps) if (s.k && D[s.k] !== null) { const m = T[s.k], gap = (m.good - D[s.k]) / m.good; if (gap > worst) { worst = gap; leak = s.k; } }
   const leakStep = steps.find(s => s.k && s.k === leak);
   const topV = Math.max(1, ...steps.map(s => cur[s.f]));
-  const periods = [["4w", "Last 4 weeks"], ["13w", "Last quarter"], ["26w", "Last 6 months"], ["tw", "This week so far"]];
-  box.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><p class="tiny">${c.flow === "nocall" ? "No-call flow: lead → trial spot held → confirmed (replied YES) → attended → client. " : "Call flow: lead → call booked → call attended → trial → client. "}Change your flow in Settings. Lead to client overall: <b style="color:var(--fg)">${fmt(pct(cur.new_clients, cur.leads), "pct")}</b>${prev ? ` · arrows compare with the ${R.label.replace("last ", "")} before` : ""}</p>
+  const periods = [["4w", "Last 4 weeks"], ["13w", "Last 3 months"], ["26w", "Last 6 months"], ["tw", "This week so far"]];
+  box.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><p class="tiny">${c.flow === "nocall" ? "No-call flow: lead → trial spot held → confirmed (replied YES) → attended → client. " : "Call flow: lead → call booked → call attended → trial → client. "}Change your flow in Settings. Lead to client overall: <b style="color:var(--fg)">${fmt(pct(cur.new_clients, cur.leads), "pct")}</b>${prev ? ` · ▲▼ = change on the ${R.label.replace("last ", "")} before that` : ""}</p>
     <select class="select-sm" id="period" aria-label="Period">${periods.map(([k, l]) => `<option value="${k}" ${S.period === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
   <div class="funnel">${steps.map(s => {
     const v = s.k ? D[s.k] : null, r = s.k ? rag(s.k, v, T) : "none", now = cur[s.f], isLeak = s.k && s.k === leak;
@@ -642,6 +646,18 @@ function detailFunnel(box, M) {
 `;
   }).join("")}</div>${leakStep ? `<div class="leak-note"><b>Biggest drop: ${esc(T[leakStep.k].label)} ${fmt(D[leakStep.k], "pct")} (target ${tgt(T[leakStep.k])}).</b> ${esc(ADVICE[leakStep.k])}${/show_rate/.test(leakStep.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>This may be lower than it really is: ${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments aren't marked yet.</i>` : ""}</div>` : ""}</div>`;
   box.querySelector("#period").addEventListener("change", e => { S.period = e.target.value; render(); });
+}
+function detailYear(box, M) {
+  const { T, sy } = M;
+  const first = M.months.findIndex(m => n(m.revenue) > 0 || n(m.members) > 0 || m.joined > 0);
+  const ms = first < 0 ? [] : M.months.slice(first);
+  if (!ms.length) { box.innerHTML = `<div class="card"><p class="muted small">No months yet.</p></div>`; return; }
+  const tot = ms.reduce((a, m) => (a.j += m.joined, a.l += m.left, a.r += n(m.revenue), a.sp += m.s.spend_weeks ? m.s.ad_spend : 0, a.p += m.profit ?? 0, a.pn += m.profit !== null ? 1 : 0, a), { j: 0, l: 0, r: 0, sp: 0, p: 0, pn: 0 });
+  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Every month since ${sy ? "your CRM was connected" : "you started tracking"} (${monthLabel(ms[0].month)}). Kept for good, so this becomes your year-on-year record.</p>
+  <div class="table-wrap"><table><thead><tr><th>Month</th><th>Members at end</th><th>Joined</th><th>Left</th><th>Net</th>${sy ? "<th>Recurring revenue</th>" : ""}<th>Revenue taken</th><th>Ad spend</th><th>Profit</th><th>Margin</th></tr></thead><tbody>
+  ${ms.slice().reverse().map(m => { const net = m.joined - m.left; return `<tr><td>${monthLabel(m.month)}${m.month === M.nowKey ? " (so far)" : ""}</td><td>${fmt(m.members, "int")}</td><td class="c-good">+${m.joined}</td><td class="${m.left ? "c-bad" : ""}">${m.left ? "−" + m.left : "0"}</td><td class="${net > 0 ? "c-good" : net < 0 ? "c-bad" : ""}">${net > 0 ? "+" : ""}${net}</td>${sy ? `<td>${fmt(n(m.a.mrr), "gbp0")}</td>` : ""}<td>${fmt(m.revenue, "gbp0")}</td><td>${m.s.spend_weeks ? fmt(m.s.ad_spend, "gbp0") : "—"}</td><td>${fmt(m.profit, "gbp0")}</td><td class="c-${rag("margin", m.margin, T)}">${fmt(m.margin, "pct")}</td></tr>`; }).join("")}
+  <tr class="total"><td>Total</td><td>${fmt(ms[ms.length - 1].members, "int")}</td><td>+${tot.j}</td><td>${tot.l ? "−" + tot.l : "0"}</td><td>${tot.j - tot.l > 0 ? "+" : ""}${tot.j - tot.l}</td>${sy ? "<td></td>" : ""}<td>${fmt(tot.r, "gbp0")}</td><td>${tot.sp ? fmt(tot.sp, "gbp0") : "—"}</td><td>${tot.pn ? fmt(tot.p, "gbp0") : "—"}</td><td></td></tr>
+  </tbody></table></div>`;
 }
 function detailSpeed(box, M) {
   const { c, T, rows, info } = M;
@@ -682,7 +698,7 @@ function detailCompare(box, M) {
       <div class="cmp-track">${pos(avg) !== null ? `<span class="cmp-mark avg" style="left:${pos(avg)}%"><i>avg ${fmt(avg, "pct")}</i></span>` : ""}${pos(top) !== null ? `<span class="cmp-mark top" style="left:${pos(top)}%"><i>top 25% ${fmt(top, "pct")}</i></span>` : ""}${pos(me) !== null ? `<div class="cmp-bar ${better}" style="width:${pos(me)}%"></div>` : ""}</div>
       <div class="cmp-you ${better}">${fmt(me, "pct")}<small>you</small></div></div>`;
   }).join("");
-  box.innerHTML = `<div class="card section"><p class="tiny">Last quarter (13 weeks). Your bar against the S2S average and the top 25% of coaches. Anonymous: no coach's name or numbers are ever shown. Based on ${fmt(B.coaches, "int")} coach${B.coaches === 1 ? "" : "es"}.${B.coaches < 5 ? " Coaches see this once 5 or more are connected." : ""}</p><div class="cmp">${rowsB}</div></div>`;
+  box.innerHTML = `<div class="card section"><p class="tiny">Last 3 months. Your bar against the S2S average and the top 25% of coaches. Anonymous: no coach's name or numbers are ever shown. Based on ${fmt(B.coaches, "int")} coach${B.coaches === 1 ? "" : "es"}.${B.coaches < 5 ? " Coaches see this once 5 or more are connected." : ""}</p><div class="cmp">${rowsB}</div></div>`;
 }
 function greeting(c) { const h = new Date().getHours(); return (h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening") + ", " + esc(firstName(c)); }
 function membersChart(hist, goal) {
@@ -725,7 +741,22 @@ function joinLeaveChart(pts) {
 }
 
 /* ---- ads (Tier 4) ---- */
+const CHANNELS = [["paid", "Paid ads"], ["cold", "Cold outreach"], ["warm", "Warm outreach"], ["social", "Social media"], ["referral", "Referrals"], ["reactivation", "Reactivation"]];
 function viewAds(main) {
+  if (!S.channel) S.channel = "paid";
+  const bar = el("div", "subtabs channel-tabs", CHANNELS.map(([k, l]) => `<button class="subtab" data-ch="${k}" aria-selected="${S.channel === k}">${l}${k === "paid" ? "" : ' <span class="soon">soon</span>'}</button>`).join(""));
+  main.appendChild(el("div", "section-head", `<div><span class="eyebrow">Tier 4 · Advertising</span><h2>Marketing</h2></div>`));
+  main.appendChild(bar);
+  bar.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { S.channel = b.dataset.ch; render(); }));
+  if (S.channel !== "paid") {
+    const name = CHANNELS.find(x => x[0] === S.channel)[1];
+    main.appendChild(el("section", "card meta-card", `<span class="eyebrow">${esc(name)}</span><h3>${esc(name)} results are coming</h3>
+      <p class="muted small">This tab will show the leads, trials and new clients that came from ${esc(name.toLowerCase())}, and what each one is worth. It switches on once every lead in the CRM records where it came from (the lead source update), so it's counted automatically like everything else here.</p>`));
+    return;
+  }
+  paidAds(main);
+}
+function paidAds(main) {
   const c = coachInView(), M = model(c), { T, rows, RT, sy } = M;
   if (!S.adsPeriod) S.adsPeriod = "13w";
   const R = periodRange(S.adsPeriod), ws = inRange(rows, R.from, R.to), cur = sumWeeks(ws, c), D = derive(cur, c);
@@ -733,8 +764,8 @@ function viewAds(main) {
   const spend = cur.spend_weeks ? cur.ad_spend : null;
   const cpl = spend !== null && adLeads ? spend / adLeads : null;
   const roas = spend ? cur.new_clients * RT.ltv / spend : null;
-  const periods = [["4w", "Last 4 weeks"], ["13w", "Last quarter"], ["26w", "Last 6 months"]];
-  const head = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Tier 4 · Advertising</span><h2>Are your ads working?</h2></div>
+  const periods = [["4w", "Last 4 weeks"], ["13w", "Last 3 months"], ["26w", "Last 6 months"]];
+  const head = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Paid ads</span><h2>Are your ads working?</h2></div>
     <select class="select-sm" id="ads-period" aria-label="Period">${periods.map(([k, l]) => `<option value="${k}" ${S.adsPeriod === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
   <div class="health">
     ${bigTile("Ad spend", fmt(spend, "gbp0"), spend === null ? "not entered yet" : cur.spend_weeks < cur.weeks ? `${cur.spend_weeks} of ${cur.weeks} weeks entered` : R.label)}
@@ -753,7 +784,7 @@ function viewAds(main) {
 
   // spend vs cost per lead, week by week
   const last = []; for (let i = 12; i >= 0; i--) { const wk = iso(addDays(lastMonday(), -7 * i)); last.push({ wk, w: rows.find(x => x.week_start === wk) }); }
-  const ch = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">Last quarter</span><h3>Ad spend and cost per lead, week by week</h3></div><div class="legend"><span><i style="background:#2A3F5F"></i>Spend</span><span><i style="background:var(--accent-2)"></i>Cost per lead</span></div></div>`);
+  const ch = el("section", "card section", `<div class="section-head"><div><span class="eyebrow">Last 3 months</span><h3>Ad spend and cost per lead, week by week</h3></div><div class="legend"><span><i style="background:#2A3F5F"></i>Spend</span><span><i style="background:var(--accent-2)"></i>Cost per lead</span></div></div>`);
   ch.appendChild(spendChart(last, sy));
   main.appendChild(ch);
 
@@ -885,9 +916,9 @@ function viewSettings(main) {
   <form class="card" id="set-form"><div class="form-group"><div class="grid-form">
     <label for="s-name">Your name<input id="s-name" value="${esc(c.name)}" ${dis}></label>
     <label for="s-business">Business name<input id="s-business" value="${esc(c.business)}" ${dis}></label>
-    <label for="s-flow">Booking flow<select id="s-flow" ${dis}><option value="call" ${c.flow === "call" ? "selected" : ""}>Call flow (discovery calls)</option><option value="nocall" ${c.flow === "nocall" ? "selected" : ""}>No-call flow (straight to trial)</option></select></label>
-    <label for="s-fee">Average monthly fee (£)<input id="s-fee" type="number" min="0" step="0.01" value="${esc(c.avg_fee)}" ${dis}></label>
-    <label for="s-goal">Member target <small>How many paying members you're aiming for</small><input id="s-goal" type="number" min="0" step="1" value="${esc((c.targets || {}).member_goal ?? "")}" ${dis}></label>
+    <label for="s-flow">Booking flow <small>Which CRM flow you run. Changes how your funnel is shown</small><select id="s-flow" ${dis}><option value="call" ${c.flow === "call" ? "selected" : ""}>Call flow (discovery calls)</option><option value="nocall" ${c.flow === "nocall" ? "selected" : ""}>No-call flow (straight to trial)</option></select></label>
+    ${synced(c) ? "" : `<label for="s-fee">Average monthly fee (£) <small>Read from your CRM once it's connected</small><input id="s-fee" type="number" min="0" step="0.01" value="${esc(c.avg_fee)}" ${dis}></label>`}
+    <label for="s-goal">Monthly revenue target (£) <small>The recurring revenue you're aiming for each month</small><input id="s-goal" type="number" min="0" step="50" value="${esc((c.targets || {}).revenue_goal ?? "")}" ${dis}></label>
     ${synced(c) ? "" : `<label for="s-months">Months a client stays <small>Your estimate until the CRM is connected</small><input id="s-months" type="number" min="1" step="0.5" value="${esc(c.avg_months)}" ${dis}></label>`}
   </div></div>
   <div class="form-group"><details class="more"><summary>Targets</summary>
@@ -899,9 +930,9 @@ function viewSettings(main) {
   main.appendChild(sec);
   sec.querySelector("#set-form").addEventListener("submit", async e => {
     e.preventDefault(); const f = e.target, targets = {};
-    if (f.querySelector("#s-goal").value !== "") targets.member_goal = +f.querySelector("#s-goal").value;
+    if (f.querySelector("#s-goal").value !== "") targets.revenue_goal = +f.querySelector("#s-goal").value;
     for (const k of keys) { const g = +f.querySelector(`#t-${k}-g`).value, o = +f.querySelector(`#t-${k}-o`).value; if (g !== METRICS[k].good || o !== METRICS[k].ok) targets[k] = { good: g, ok: o }; }
-    try { S.me = await rpc("kpi_save_settings", { p_code: S.code, p_data: { name: f.querySelector("#s-name").value, business: f.querySelector("#s-business").value, flow: f.querySelector("#s-flow").value, avg_fee: f.querySelector("#s-fee").value, avg_months: f.querySelector("#s-months")?.value ?? "", targets } }); toast("Settings saved"); render(); }
+    try { S.me = await rpc("kpi_save_settings", { p_code: S.code, p_data: { name: f.querySelector("#s-name").value, business: f.querySelector("#s-business").value, flow: f.querySelector("#s-flow").value, avg_fee: f.querySelector("#s-fee")?.value ?? "", avg_months: f.querySelector("#s-months")?.value ?? "", targets } }); toast("Settings saved"); render(); }
     catch (er) { toast("Didn't save. Try again.", true); }
   });
 }
@@ -938,7 +969,7 @@ function wins(M) {
   const growth = M.members !== null && M.membersPrev !== null ? M.members - M.membersPrev : null;
   if (growth !== null && growth >= 3) out.push({ k: "growth", v: growth, title: `+${growth} members this month (${M.membersPrev} → ${M.members})`, line: `${name} has gone from ${M.membersPrev} to ${M.members} paying members this month.` });
   const lt = M.D12.lt_roas;
-  if (lt !== null && lt >= 5 && M.s12.new_clients >= 3) out.push({ k: "roas", v: lt, title: `£1 on ads → £${lt.toFixed(2)} back`, line: `Every £1 ${name} puts into ads is bringing back £${lt.toFixed(2)} over a client's lifetime (${fmt(M.s12.ad_spend, "gbp0")} spend, ${M.s12.new_clients} new clients, last quarter).` });
+  if (lt !== null && lt >= 5 && M.s12.new_clients >= 3) out.push({ k: "roas", v: lt, title: `£1 on ads → £${lt.toFixed(2)} back`, line: `Every £1 ${name} puts into ads is bringing back £${lt.toFixed(2)} over a client's lifetime (${fmt(M.s12.ad_spend, "gbp0")} spend, ${M.s12.new_clients} new clients, last 3 months).` });
   if (out.some(w => w.k === "growth")) { const i = out.findIndex(w => w.k === "clients"); if (i >= 0) out.splice(i, 1); }
   const fm = M.D12.fm_roas;
   if (fm !== null && fm >= 1 && M.s12.new_clients >= 3) out.push({ k: "payback", v: fm, title: `Ads paid back in the first month (${fm.toFixed(1)}x)`, line: `${name}'s ads paid for themselves in the very first month: ${fmt(M.s12.ad_spend, "gbp0")} spent, ${fmt(M.s12.first_month, "gbp0")} back in month one.` });
