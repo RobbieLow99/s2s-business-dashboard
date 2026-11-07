@@ -232,10 +232,17 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
   .monday h3 { font-size: 14px; }
   .section-head { align-items: flex-start; }
   .channel-tabs .soon { display: none; }
+  .grid-form { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-form label small { display: none; }
   .channel-tabs .subtab[data-ch]:not([data-ch="paid"]) { opacity: .7; }
 }
 .detail-box, #detail { min-width: 0; }
 .speed-strip > .stat { min-width: 0; }
+.back-btn { appearance: none; cursor: pointer; font: 700 13px var(--font); color: var(--accent-2); background: rgba(140,82,255,.12); border: 1px solid rgba(140,82,255,.45); padding: 7px 12px; border-radius: 999px; white-space: nowrap; flex: none; }
+.top-row { flex-wrap: nowrap; }
+.top-row > .brand { flex: 1; }
+.key-stat { display: flex; gap: 16px; align-items: center; }
+.key-stat .kpi-value { font-size: 34px; color: var(--accent-2); }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -549,17 +556,15 @@ function render() {
   else { tabs = [["dash", "Business"], ["ads", "Marketing"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
   app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
-      <div class="brand">${brandMark(S.viewing || !me.is_admin ? c : null)}<div class="brand-text"><span class="brand-kicker">Systems to Scale · Business Dashboard</span><b>${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
+      ${S.viewing ? `<button class="back-btn" id="back" aria-label="Back to all coaches">‹ All coaches</button>` : ""}<div class="brand">${brandMark(S.viewing || !me.is_admin ? c : null)}<div class="brand-text"><span class="brand-kicker">Systems to Scale · Business Dashboard</span><b>${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
       <button class="btn-ghost" id="logout">Log out</button></div>
     <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</nav></div></header>
   <main class="wrap" id="main"></main>`;
   app.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { S.tab = b.dataset.tab; render(); scrollTo(0, 0); }));
   document.getElementById("logout").addEventListener("click", () => { try { localStorage.removeItem("s2s_dash_code"); } catch (e) {} Object.assign(S, { code: null, me: null, admin: null, viewing: null }); renderLogin(); });
+  document.getElementById("back")?.addEventListener("click", () => { S.viewing = null; S.tab = "admin"; render(); scrollTo(0, 0); });
   const main = document.getElementById("main");
-  if (S.viewing) {
-    const b = el("div", "banner", `<span>Viewing <b>${esc(c.business || c.name)}</b>. Read-only.</span><button class="btn-ghost" id="back">Back to all coaches</button>`);
-    main.appendChild(b); b.querySelector("#back").addEventListener("click", () => { S.viewing = null; S.tab = "admin"; render(); });
-  }
+
   ({ dash: viewDash, ads: viewAds, week: viewWeek, money: viewMoney, settings: viewSettings, admin: viewAdmin, manage: viewManage })[S.tab](main);
 }
 function kpi(label, value, foot, r, delta) { return `<div class="kpi" data-rag="${r || "none"}"><span class="kpi-label">${esc(label)}</span><span class="kpi-value">${value}</span><div class="kpi-foot"><span>${foot || ""}</span>${delta || ""}</div></div>`; }
@@ -864,16 +869,11 @@ function joinLeaveChart(pts) {
 const CHANNELS = [["paid", "Paid ads"], ["cold", "Cold outreach"], ["warm", "Warm outreach"], ["social", "Social media"], ["referral", "Referrals"], ["reactivation", "Reactivation"]];
 function viewAds(main) {
   if (!S.channel) S.channel = "paid";
-  const bar = el("div", "subtabs channel-tabs", CHANNELS.map(([k, l]) => `<button class="subtab" data-ch="${k}" aria-selected="${S.channel === k}">${l}${k === "paid" ? "" : ' <span class="soon">soon</span>'}</button>`).join(""));
+  const bar = el("div", "subtabs channel-tabs", CHANNELS.map(([k, l]) => `<button class="subtab" data-ch="${k}" aria-selected="${S.channel === k}">${l}</button>`).join(""));
   main.appendChild(el("div", "section-head", `<div><span class="eyebrow">Tier 4 · Advertising</span><h2>Marketing</h2></div>`));
   main.appendChild(bar);
   bar.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { S.channel = b.dataset.ch; render(); }));
-  if (S.channel !== "paid") {
-    const name = CHANNELS.find(x => x[0] === S.channel)[1];
-    main.appendChild(el("section", "card meta-card", `<span class="eyebrow">${esc(name)}</span><h3>${esc(name)} results are coming</h3>
-      <p class="muted small">This tab will show the leads, trials and new clients that came from ${esc(name.toLowerCase())}, and what each one is worth. It switches on once every lead in the CRM records where it came from (the lead source update), so it's counted automatically like everything else here.</p>`));
-    return;
-  }
+  if (S.channel !== "paid") { viewChannel(main, S.channel); return; }
   paidAds(main);
 }
 function paidAds(main) {
@@ -949,6 +949,105 @@ function spendChart(pts, sy) {
     ${cpl.map((v, i) => v === null ? "" : `<circle cx="${x(i)}" cy="${yc(v)}" r="3.5" fill="#A47BFF"/>`).join("")}
   </svg>`;
   return card;
+}
+
+/* ---- channel trackers (from the Advertising Playbooks) ---- */
+const pctOf = (a, b) => b > 0 ? fmt(a / b * 100, "pct") : "—";
+const perOne = (a, b) => b > 0 ? (a / b).toFixed(a / b < 10 ? 1 : 0) : "—";
+const CHANNEL_DEFS = {
+  cold: { name: "Cold outreach", mode: "week", how: "Fill this in every evening (it adds up through the week): posts in Facebook groups, the messages that came from them, and who booked.",
+    fields: [["posts", "Posts made", "In Facebook groups"], ["groups", "Groups posted in", ""], ["engaged", "Likes + comments", "On your posts"], ["messages", "Messages sent", "To parents who engaged"], ["replies", "Replies", ""], ["booked", "Booked", "Call or trial"], ["joined", "Joined", "Became paying members"], ["post", "This week's post", "Short name, so you can compare", "text"]],
+    tiles: s => [["Posts made", fmt(s.posts, "int"), `${fmt(s.groups, "int")} groups`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.messages)} of messages sent`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.replies)} of replies`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.joined, s.booked)} of bookings`]],
+    key: s => ["posts per booking", perOne(s.posts, s.booked), "how many posts it takes to book one family"],
+    tip: "Groups with nothing after 4–5 posts: drop them. Keep this week's post if it beat last week's on bookings per post." },
+  warm: { name: "Warm outreach", mode: "week", how: "Update this every evening: people you messaged (friends, followers, new engagers), follow-ups and who booked.",
+    fields: [["messaged", "People messaged", "First message"], ["followups", "Follow-ups sent", "2-day follow-ups"], ["replies", "Replies", ""], ["names", "Names given", "People they put you on to"], ["booked", "Booked", "Call or trial"], ["joined", "Joined", "Became paying members"]],
+    tiles: s => [["People messaged", fmt(s.messaged, "int"), `${fmt(s.followups, "int")} follow-ups`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.messaged)} reply rate`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.replies)} of replies`], ["Joined", fmt(s.joined, "int"), `${fmt(s.names, "int")} names given`]],
+    key: s => ["messages per booking", perOne(s.messaged, s.booked), "how many people you message to book one family"],
+    tip: "Low replies? Change your first message. Replies but no bookings? Push for the call sooner." },
+  social: { name: "Social media", mode: "week", how: "Once a week (Sunday works): what you posted and how many parents it brought in.",
+    fields: [["posts", "Posts and Reels", ""], ["stories", "Stories", ""], ["enquiries", "Enquiries", "DMs, comments, Story replies, form"], ["booked", "Booked", "Call or trial"], ["joined", "Joined", "Became paying members"], ["best", "Best post this week", "Copy it next week", "text"]],
+    tiles: s => [["Posts", fmt(s.posts, "int"), `${fmt(s.stories, "int")} Stories`], ["Enquiries", fmt(s.enquiries, "int"), `${perOne(s.enquiries, s.posts + s.stories)} per post or Story`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.enquiries)} of enquiries`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.joined, s.booked)} of bookings`]],
+    key: s => ["posts per enquiry", perOne(s.posts + s.stories, s.enquiries), "posts and Stories it takes to get one parent messaging"],
+    tip: "A post that took off? Run it as an ad. Messages but no bookings? See where they go quiet." },
+  referral: { name: "Referrals", mode: "week", how: "Once a week: how many families you asked, the friends they sent, and rewards paid.",
+    fields: [["asked", "Families asked", "For a referral"], ["referred", "Friends referred", "New families who got in touch"], ["booked", "Trials booked", ""], ["joined", "Joined", "Became paying members"], ["rewards", "Rewards paid (£)", "Money off or cash", "money"]],
+    tiles: s => [["Families asked", fmt(s.asked, "int"), ""], ["Friends referred", fmt(s.referred, "int"), `${perOne(s.referred * 10, s.asked)} per 10 families asked`], ["Trials booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.referred)} of referrals`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.joined, s.booked)} of trials`]],
+    key: s => ["cost per new client", s.joined ? fmt(s.rewards / s.joined, "gbp0") : "—", "rewards paid ÷ families who joined. Compare it with your ad cost per client"],
+    tip: "Ask every family at least once a month. Pay rewards the same day the new family's first payment goes through." },
+  reactivation: { name: "Reactivation", mode: "blast", how: "Log each SMS or email blast: who it went to and what came back.",
+    fields: [["date", "Date sent", "", "date"], ["list", "List", "e.g. Reactivation List, Ex-members", "text"], ["via", "SMS, email or both", "", "text"], ["sent", "Sent to", "Contacts"], ["replies", "Replies", ""], ["booked", "Trials booked", ""], ["joined", "Joined", ""], ["stops", "Said STOP", ""], ["cost", "Cost (£)", "SMS cost, if you know it", "money"]],
+    tiles: s => [["Blasts sent", fmt(s.n, "int"), `${fmt(s.sent, "int")} contacts`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.sent)} reply rate`], ["Trials booked", fmt(s.booked, "int"), `${perOne(s.booked * 100, s.sent)} per 100 sent`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.stops, s.sent)} said STOP`]],
+    key: s => ["trials per blast", perOne(s.booked, s.n), "the number to beat next time"],
+    tip: "A few STOPs are normal. Lots of them? You're messaging too often, or the offer was weak." },
+};
+function channelEntries(c, ch) { return (c.channels || []).filter(x => x.channel === ch); }
+function channelSum(entries, def) {
+  const s = { n: entries.length };
+  for (const [k, , , t] of def.fields) if (!t || t === "money") s[k] = entries.reduce((a, e) => a + n(e.data[k]), 0);
+  return s;
+}
+function viewChannel(main, ch) {
+  const c = coachInView(), def = CHANNEL_DEFS[ch], all = channelEntries(c, ch);
+  if (!S.chPeriod) S.chPeriod = "4w";
+  const R = periodRange(S.chPeriod);
+  const inPeriod = def.mode === "week" ? all.filter(e => e.key >= iso(R.from) && e.key <= iso(addDays(R.to, 7))) : all.filter(e => (e.data.date || e.key) >= iso(R.from));
+  const s = channelSum(inPeriod, def), K = def.key(s);
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">${def.name}</span><h2>${def.name} tracker</h2><p class="tiny">${esc(def.how)}</p></div>
+    <select class="select-sm" id="ch-period" aria-label="Period"><option value="4w" ${S.chPeriod === "4w" ? "selected" : ""}>Last 4 weeks</option><option value="13w" ${S.chPeriod === "13w" ? "selected" : ""}>Last 3 months</option><option value="26w" ${S.chPeriod === "26w" ? "selected" : ""}>Last 6 months</option></select></div>
+  ${all.length ? `<div class="health">${def.tiles(s).map(([l, v, f]) => bigTile(l, v, f)).join("")}</div>
+  <div class="card key-stat"><span class="kpi-value">${K[1]}</span><div><b>${esc(K[0])}</b><p class="tiny">${esc(K[2])}</p></div></div>` : `<div class="card"><p class="muted small">Nothing logged yet. Add your first ${def.mode === "week" ? "week" : "blast"} below and your numbers appear here.</p></div>`}
+  <p class="tiny">${esc(def.tip)}</p>`);
+  main.appendChild(sec);
+  sec.querySelector("#ch-period").addEventListener("change", e => { S.chPeriod = e.target.value; render(); });
+
+  // entry form
+  if (!readOnly()) {
+    let key, row;
+    if (def.mode === "week") {
+      const opts = []; for (let i = 0; i < 12; i++) opts.push(iso(addDays(thisMonday(), -7 * i)));
+      if (!S.chWeek || !opts.includes(S.chWeek)) S.chWeek = iso(thisMonday());
+      key = S.chWeek; row = (all.find(e => e.key === key) || { data: {} }).data;
+      const f = el("section", "card section", `<div class="row" style="justify-content:space-between"><h3>Log your numbers</h3>
+        <select class="select-sm" id="ch-week" aria-label="Week">${opts.map(o => `<option value="${o}" ${o === key ? "selected" : ""}>${weekLabel(o)}${o === iso(thisMonday()) ? " (this week)" : ""}${all.some(e => e.key === o) ? " ✓" : ""}</option>`).join("")}</select></div>
+        <form id="ch-form"><div class="grid-form">${def.fields.map(([k, l, h, t]) => `<label for="cf-${k}">${esc(l)}${h ? ` <small>${esc(h)}</small>` : ""}<input id="cf-${k}" ${t === "text" ? 'type="text" maxlength="200"' : `type="number" inputmode="decimal" min="0" step="${t === "money" ? "0.01" : "1"}"`} value="${esc(row[k] ?? "")}"></label>`).join("")}</div>
+        <div class="form-actions" style="margin-top:14px"><button class="btn" type="submit">Save ${weekLabel(key)}</button></div></form>`);
+      main.appendChild(f);
+      f.querySelector("#ch-week").addEventListener("change", e => { S.chWeek = e.target.value; render(); });
+      f.querySelector("#ch-form").addEventListener("submit", e => { e.preventDefault(); saveChannel(ch, key, def, e.target); });
+    } else {
+      const editing = S.chEdit && all.find(e => e.key === S.chEdit);
+      row = editing ? editing.data : { date: iso(new Date()) };
+      const f = el("section", "card section", `<div class="row" style="justify-content:space-between"><h3>${editing ? "Edit blast" : "Log a blast"}</h3>${editing ? `<button class="btn-ghost" id="ch-new">New blast instead</button>` : ""}</div>
+        <form id="ch-form"><div class="grid-form">${def.fields.map(([k, l, h, t]) => `<label for="cf-${k}">${esc(l)}${h ? ` <small>${esc(h)}</small>` : ""}<input id="cf-${k}" ${t === "text" ? 'type="text" maxlength="200"' : t === "date" ? 'type="date"' : `type="number" inputmode="decimal" min="0" step="${t === "money" ? "0.01" : "1"}"`} value="${esc(row[k] ?? "")}"></label>`).join("")}</div>
+        <div class="form-actions" style="margin-top:14px"><button class="btn" type="submit">${editing ? "Save changes" : "Save blast"}</button></div></form>`);
+      main.appendChild(f);
+      f.querySelector("#ch-new")?.addEventListener("click", () => { S.chEdit = null; render(); });
+      f.querySelector("#ch-form").addEventListener("submit", e => { e.preventDefault(); const k = editing ? editing.key : (e.target.querySelector("#cf-date").value || iso(new Date())) + "-" + Date.now().toString(36).slice(-4); saveChannel(ch, k, def, e.target); });
+    }
+  }
+
+  // history
+  const numF = def.fields.filter(([, , , t]) => t !== "text" && t !== "date");
+  const rowsH = def.mode === "week" ? all.slice().sort((a, b) => a.key < b.key ? 1 : -1).slice(0, 12) : all.slice().sort((a, b) => (a.data.date || a.key) < (b.data.date || b.key) ? 1 : -1);
+  if (rowsH.length) {
+    const h = el("section", "section", `<div class="section-head"><div><h2>${def.mode === "week" ? "Week by week" : "Every blast"}</h2>${readOnly() ? "" : `<p class="tiny">Tap a row to edit it.</p>`}</div></div>
+    <div class="table-wrap"><table><thead><tr><th>${def.mode === "week" ? "Week" : "Date"}</th>${def.mode === "blast" ? "<th>List</th>" : ""}${numF.map(([, l]) => `<th>${esc(l.replace(" (£)", ""))}</th>`).join("")}${def.mode === "blast" ? "<th></th>" : ""}</tr></thead><tbody>
+    ${rowsH.map(e => `<tr class="${readOnly() ? "" : "click"}" data-k="${esc(e.key)}"><td>${def.mode === "week" ? weekLabel(e.key) : parseISO((e.data.date || e.key).slice(0, 10)).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}</td>${def.mode === "blast" ? `<td style="text-align:left">${esc(e.data.list || "")}</td>` : ""}${numF.map(([k, , , t]) => `<td>${has(e.data[k]) ? fmt(n(e.data[k]), t === "money" ? "gbp0" : "int") : "—"}</td>`).join("")}${def.mode === "blast" && !readOnly() ? `<td><button class="btn-ghost del" data-k="${esc(e.key)}">Delete</button></td>` : def.mode === "blast" ? "<td></td>" : ""}</tr>`).join("")}
+    </tbody></table></div>`);
+    main.appendChild(h);
+    h.querySelectorAll("tr.click").forEach(tr => tr.addEventListener("click", ev => { if (ev.target.closest(".del")) return; if (def.mode === "week") S.chWeek = tr.dataset.k; else S.chEdit = tr.dataset.k; render(); scrollTo(0, 0); }));
+    h.querySelectorAll(".del").forEach(b => b.addEventListener("click", async () => {
+      if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Tap again to delete"; return; }
+      try { S.me = await rpc("kpi_delete_channel", { p_code: S.code, p_channel: ch, p_key: b.dataset.k }); S.chEdit = null; toast("Blast deleted"); render(); } catch (er) { toast("Couldn't delete. Try again.", true); }
+    }));
+  }
+}
+async function saveChannel(ch, key, def, form) {
+  const data = {};
+  for (const [k, , , t] of def.fields) { const v = form.querySelector("#cf-" + k).value; if (v === "") continue; data[k] = t === "text" || t === "date" ? v : +v; }
+  try { S.me = await rpc("kpi_save_channel", { p_code: S.code, p_channel: ch, p_key: key, p_data: data }); S.chEdit = null; toast("Saved"); render(); }
+  catch (er) { toast("Didn't save. Check your connection and try again.", true); }
 }
 
 /* ---- weekly numbers (only for coaches without a CRM connection) ---- */
