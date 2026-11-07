@@ -143,7 +143,7 @@ input[type="number"] { font-variant-numeric: tabular-nums; }
 .f-row.leak .f-label { color: #FF9AA8; }
 .f-row.leak .f-bar { background: linear-gradient(90deg, #B8364A, var(--bad)); }
 .f-delta { font-size: 11px; margin-left: 4px; }
-.leak-note { margin: 2px 0 8px; padding: 10px 12px; border-radius: 10px; background: rgba(240,86,106,.10); border: 1px solid rgba(240,86,106,.35); font-size: 13px; color: var(--fg-2); }
+.leak-note { margin: 16px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(240,86,106,.10); border: 1px solid rgba(240,86,106,.35); font-size: 13px; color: var(--fg-2); }
 .leak-note b { color: #FF9AA8; }
 .risk-list { display: grid; gap: 10px; }
 .risk { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; }
@@ -630,6 +630,7 @@ function detailFunnel(box, M) {
   // biggest leak = the step furthest below its target
   let leak = null, worst = 0;
   for (const s of steps) if (s.k && D[s.k] !== null) { const m = T[s.k], gap = (m.good - D[s.k]) / m.good; if (gap > worst) { worst = gap; leak = s.k; } }
+  const leakStep = steps.find(s => s.k && s.k === leak);
   const topV = Math.max(1, ...steps.map(s => cur[s.f]));
   const periods = [["4w", "Last 4 weeks"], ["13w", "Last quarter"], ["26w", "Last 6 months"], ["tw", "This week so far"]];
   box.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><p class="tiny">${c.flow === "nocall" ? "No-call flow: lead → trial spot held → confirmed (replied YES) → attended → client. " : "Call flow: lead → call booked → call attended → trial → client. "}Change your flow in Settings. Lead to client overall: <b style="color:var(--fg)">${fmt(pct(cur.new_clients, cur.leads), "pct")}</b>${prev ? ` · arrows compare with the ${R.label.replace("last ", "")} before` : ""}</p>
@@ -638,8 +639,8 @@ function detailFunnel(box, M) {
     const v = s.k ? D[s.k] : null, r = s.k ? rag(s.k, v, T) : "none", now = cur[s.f], isLeak = s.k && s.k === leak;
     return `<div class="f-row ${isLeak ? "leak" : ""}"><span class="f-label">${s.l}${prev ? ` <span class="f-delta">${delta(now, prev[s.f], "high")}</span>` : ""}</span><div class="f-track"><div class="f-bar" style="width:${Math.min(100, now / topV * 100)}%"></div></div><span class="f-val">${fmt(now, "int")}</span>
       <span class="f-rate">${s.k ? `<span class="pill ${r}" title="Target ${esc(tgt(T[s.k]))}">${fmt(v, "pct")} ${s.side ? "of leads" : "of above"}</span>` : ""}</span></div>
-      ${isLeak ? `<div class="leak-note"><b>Biggest drop: ${esc(T[s.k].label)} ${fmt(v, "pct")} (target ${tgt(T[s.k])}).</b> ${esc(ADVICE[s.k])}${/show_rate/.test(s.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>This may be lower than it really is: ${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments aren't marked yet.</i>` : ""}</div>` : ""}`;
-  }).join("")}</div></div>`;
+`;
+  }).join("")}</div>${leakStep ? `<div class="leak-note"><b>Biggest drop: ${esc(T[leakStep.k].label)} ${fmt(D[leakStep.k], "pct")} (target ${tgt(T[leakStep.k])}).</b> ${esc(ADVICE[leakStep.k])}${/show_rate/.test(leakStep.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>This may be lower than it really is: ${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments aren't marked yet.</i>` : ""}</div>` : ""}</div>`;
   box.querySelector("#period").addEventListener("change", e => { S.period = e.target.value; render(); });
 }
 function detailSpeed(box, M) {
