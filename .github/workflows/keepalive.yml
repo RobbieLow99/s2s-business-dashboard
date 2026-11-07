@@ -1,0 +1,12 @@
+name: keep-alive
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -fsS -X POST "https://wnoqndzgemiixrzjekiy.supabase.co/rest/v1/rpc/kpi_ping" \
+            -H "apikey: sb_publishable_6JR7nE988n8fPe5SFbtyeA_sIoR3E8X" -H "Content-Type: application/json" -d '{}'

@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Business Dashboard</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: one-column app shell. Summary first (health), then the one thing to fix, then the funnel, then detail. */
+:root {
+  --bg: #060D19; --bg-2: #0B1A2E; --panel: #0E1F36; --line: #1C3150;
+  --fg: #FFFFFF; --fg-2: #A9B6C8; --fg-3: #6B7C93;
+  --accent: #8C52FF; --accent-2: #A47BFF; --accent-deep: #7038E6;
+  --good: #2BC48A; --ok: #F2B33D; --bad: #F0566A;
+  --font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); background-image: radial-gradient(1200px 380px at 50% -120px, rgba(140,82,255,.22), transparent 70%); background-repeat: no-repeat; color: var(--fg); font: 400 15px/1.5 var(--font); min-height: 100vh; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h2 { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+h3 { font-size: 15px; font-weight: 700; }
+p { margin: 0; }
+.muted { color: var(--fg-2); } .small { font-size: 13px; } .tiny { font-size: 12px; color: var(--fg-3); }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: rgba(6,13,25,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px 10px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mark { width: 30px; height: 30px; flex: none; }
+.brand-text { min-width: 0; }
+.brand-text b { display: block; font-size: 14px; font-weight: 800; letter-spacing: .02em; }
+.brand-text span { display: block; font-size: 12px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { appearance: none; border: 1px solid transparent; background: none; color: var(--fg-2); font: 600 13px var(--font); padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { color: var(--fg); background: rgba(140,82,255,.16); border-color: rgba(140,82,255,.45); }
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+main { padding-block: 24px 64px; display: grid; gap: 28px; }
+.section { display: grid; gap: 14px; min-width: 0; }
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.section-head > div { display: grid; gap: 4px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.btn { appearance: none; border: 0; cursor: pointer; font: 700 14px var(--font); color: #fff; padding: 11px 20px; border-radius: 999px; background: linear-gradient(135deg, var(--accent-2), var(--accent-deep)); box-shadow: 0 6px 20px rgba(140,82,255,.3); white-space: nowrap; }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn-ghost { appearance: none; cursor: pointer; font: 600 13px var(--font); color: var(--fg-2); background: none; border: 1px solid var(--line); padding: 8px 14px; border-radius: 999px; white-space: nowrap; }
+.btn-ghost:hover { color: var(--fg); border-color: var(--fg-3); }
+label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--fg-2); min-width: 0; }
+label small { font-weight: 400; color: var(--fg-3); font-size: 12px; }
+input, select, textarea { width: 100%; font: 500 16px var(--font); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+.select-sm { width: auto; font-size: 14px; padding: 8px 10px; }
+.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.form-group { display: grid; gap: 12px; }
+.form-group + .form-group { border-top: 1px solid var(--line); padding-top: 16px; }
+.form-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--good); color: #05210f; font-weight: 700; padding: 10px 18px; border-radius: 999px; z-index: 20; }
+.toast.err { background: var(--bad); color: #fff; }
+
+.health { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; align-content: start; min-width: 0; position: relative; overflow: hidden; }
+.kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; }
+.kpi[data-rag="good"]::before { background: var(--good); } .kpi[data-rag="ok"]::before { background: var(--ok); } .kpi[data-rag="bad"]::before { background: var(--bad); }
+.kpi-label { font-size: 12px; font-weight: 600; color: var(--fg-2); }
+.kpi-value { font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.kpi-foot { font-size: 12px; color: var(--fg-3); display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; }
+.up { color: var(--good); } .down { color: var(--bad); }
+
+.monday { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: space-between; background: linear-gradient(135deg, rgba(164,123,255,.18), rgba(112,56,230,.10)); border: 1px solid rgba(140,82,255,.5); border-radius: 14px; padding: 14px 18px; }
+.monday form { display: flex; gap: 10px; align-items: center; }
+.monday input { width: 130px; }
+
+.fixes { display: grid; gap: 10px; }
+.fix { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.fix .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; }
+.fix.bad .dot { background: var(--bad); box-shadow: 0 0 0 4px rgba(240,86,106,.15); }
+.fix.ok .dot { background: var(--ok); box-shadow: 0 0 0 4px rgba(242,179,61,.15); }
+.fix.good .dot { background: var(--good); box-shadow: 0 0 0 4px rgba(43,196,138,.15); }
+.fix h3 { margin-bottom: 2px; }
+
+.funnel { display: grid; gap: 8px; }
+.f-row { display: grid; grid-template-columns: minmax(130px, 190px) 1fr 70px 118px; gap: 12px; align-items: center; }
+.f-label { font-size: 13px; font-weight: 600; color: var(--fg-2); }
+.f-track { height: 24px; background: rgba(28,49,80,.55); border-radius: 6px; overflow: hidden; }
+.f-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent-deep), var(--accent-2)); min-width: 2px; }
+.f-val { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; font-size: 15px; }
+.f-rate { justify-self: end; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill.good { color: var(--good); background: rgba(43,196,138,.12); } .pill.ok { color: var(--ok); background: rgba(242,179,61,.12); }
+.pill.bad { color: var(--bad); background: rgba(240,86,106,.12); } .pill.none { color: var(--fg-3); background: rgba(94,110,132,.14); }
+.returns { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.returns .kpi-value { font-size: 24px; }
+
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--fg-3); font: 600 10px var(--font); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--fg-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+th { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); background: var(--bg-2); }
+th:first-child, td:first-child { text-align: left; }
+tbody tr:last-child td { border-bottom: 0; }
+tr.click { cursor: pointer; } tr.click:hover td { background: rgba(140,82,255,.07); }
+td.c-good { color: var(--good); } td.c-ok { color: var(--ok); } td.c-bad { color: var(--bad); }
+tr.total td { font-weight: 800; background: var(--bg-2); }
+details.more > summary { cursor: pointer; list-style: none; display: inline-flex; gap: 8px; align-items: center; font-weight: 700; color: var(--accent-2); font-size: 14px; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "+"; font-weight: 800; }
+details.more[open] > summary::before { content: "–"; }
+details.more[open] > summary { margin-bottom: 14px; }
+
+.banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 12px; background: rgba(140,82,255,.14); border: 1px solid rgba(140,82,255,.45); font-size: 14px; }
+.empty { text-align: center; padding: 36px 18px; display: grid; gap: 10px; justify-items: center; }
+.login { min-height: 80vh; display: grid; place-items: center; }
+.login .card { max-width: 420px; width: 100%; display: grid; gap: 16px; padding: 28px; }
+.msg { display: grid; gap: 10px; }
+.msg-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.msg-head h3 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.msg blockquote { margin: 0; padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--bg-2); border-radius: 0 8px 8px 0; color: var(--fg-2); font-size: 14px; }
+.coach-admin { display: grid; gap: 12px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.coach-admin input[readonly] { font-size: 12px; flex: 1 1 260px; width: auto; }
+.status { font-size: 12px; font-weight: 600; }
+.target-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.target { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.target > p { grid-column: 1 / -1; font-weight: 700; font-size: 13px; }
+@media (max-width: 600px) {
+  .f-row { grid-template-columns: 1fr auto auto; }
+  .f-row .f-track { grid-column: 1 / -1; grid-row: 2; }
+  .health { grid-template-columns: 1fr 1fr; }
+  .kpi-value { font-size: 24px; }
+  .monday form { width: 100%; } .monday input { flex: 1; width: auto; }
+}
+@media (prefers-reduced-motion: no-preference) { .f-bar { transition: width .5s ease; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SUPABASE_URL = "https://wnoqndzgemiixrzjekiy.supabase.co";
+const SUPABASE_KEY = "sb_publishable_6JR7nE988n8fPe5SFbtyeA_sIoR3E8X";
+
+/* targets: starting points, editable per coach in Settings */
+const METRICS = {
+  called_5min:     { label: "Leads called within 5 min", fmt: "pct", dir: "high", good: 80, ok: 50 },
+  call_book_rate:  { label: "Lead → call booked",     fmt: "pct", dir: "high", good: 40, ok: 25, flow: "call" },
+  call_show_rate:  { label: "Call show rate",         fmt: "pct", dir: "high", good: 70, ok: 55, flow: "call" },
+  call_to_trial:   { label: "Call → trial booked",    fmt: "pct", dir: "high", good: 60, ok: 40, flow: "call" },
+  hold_rate:       { label: "Lead → trial spot held", fmt: "pct", dir: "high", good: 50, ok: 35, flow: "nocall" },
+  confirm_rate:    { label: "Held → confirmed (YES)", fmt: "pct", dir: "high", good: 70, ok: 50, flow: "nocall" },
+  show_rate:       { label: "Trial show rate",        fmt: "pct", dir: "high", good: 75, ok: 60 },
+  trial_to_client: { label: "Trial → client",         fmt: "pct", dir: "high", good: 50, ok: 35 },
+  cpl:             { label: "Cost per lead",          fmt: "gbp", dir: "low",  good: 8,  ok: 12 },
+  cost_per_client: { label: "Cost to get a client",   fmt: "gbp", dir: "low",  good: 100, ok: 150 },
+  fm_roas:         { label: "First-month ROAS",       fmt: "x",   dir: "high", good: 1,  ok: 0.6 },
+  lt_roas:         { label: "Lifetime ROAS",          fmt: "x",   dir: "high", good: 5,  ok: 3 },
+  churn:           { label: "Monthly churn",          fmt: "pct", dir: "low",  good: 5,  ok: 8 },
+  margin:          { label: "Profit margin",          fmt: "pct", dir: "high", good: 40, ok: 25 },
+};
+const ADVICE = {
+  called_5min: "Leads go cold fast. Call from the HighLevel app the minute the alert lands. Calls from your own phone don't count here.",
+  call_book_rate: "Leads aren't booking calls. Speed to lead: call within 5 minutes, and make sure the booking link is in the first text.",
+  call_show_rate: "People book calls and don't turn up. Text them yourself on the morning of the call.",
+  call_to_trial: "Calls aren't turning into trials. Find the pain, make the trial the obvious next step, and book it while you're on the call.",
+  hold_rate: "Leads aren't getting a trial spot held. Hold a spot for every request within 24 hours.",
+  confirm_rate: "Parents aren't replying YES. Check the price text is going out and follow up by hand after 24 hours.",
+  show_rate: "Trials aren't turning up. Call every booking the day before. A no-show is a lead you've already paid for.",
+  trial_to_client: "Trials aren't converting. Feedback to every parent after the session, onboarding links the same day, and ask for the sale.",
+  cpl: "Leads are costing too much. Test two new hooks or creatives before you touch the budget.",
+  cost_per_client: "Every new client is costing too much. Fix the red step in the funnel first. That's cheaper than more ad spend.",
+  fm_roas: "The first month isn't paying back the ad spend. Fine if clients stay. Check lifetime ROAS.",
+  lt_roas: "Over a client's lifetime you're not making enough back on ads. Fix the funnel or look at your price.",
+  churn: "Members are leaving too fast. Every one you lose costs a new lead to replace. Check in with every family monthly.",
+  margin: "Too little is left over. Tier 1: look at venue cost per session and group sizes before chasing more clients.",
+};
+
+const S = { code: null, me: null, admin: null, viewing: null, tab: "dash", period: "4w" };
+const app = document.getElementById("app");
+
+/* helpers */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const has = v => !(v === null || v === undefined || v === "");
+const n = v => has(v) && !isNaN(+v) ? +v : 0;
+const div = (a, b) => (b > 0 ? a / b : null);
+const pct = (a, b) => { const v = div(a, b); return v === null ? null : v * 100; };
+function fmt(v, f) {
+  if (v === null || v === undefined || !isFinite(v)) return "—";
+  if (f === "gbp") return "£" + (Math.abs(v) >= 100 ? Math.round(v).toLocaleString("en-GB") : v.toFixed(2));
+  if (f === "gbp0") return (v < 0 ? "−£" : "£") + Math.abs(Math.round(v)).toLocaleString("en-GB");
+  if (f === "pct") return Math.round(v) + "%";
+  if (f === "x") return v.toFixed(1) + "x";
+  return Math.round(v).toLocaleString("en-GB");
+}
+const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const parseISO = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const mondayOf = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; };
+const addDays = (d, k) => { const x = new Date(d); x.setDate(x.getDate() + k); return x; };
+const thisMonday = () => mondayOf(new Date());
+const lastMonday = () => addDays(thisMonday(), -7);
+const weekLabel = s => "w/c " + parseISO(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const monthLabel = s => parseISO(s).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+const monthShort = s => parseISO(s).toLocaleDateString("en-GB", { month: "short" });
+const monthKey = d => iso(new Date(d.getFullYear(), d.getMonth(), 1));
+const prevMonthKey = () => { const d = new Date(); return iso(new Date(d.getFullYear(), d.getMonth() - 1, 1)); };
+const firstName = c => (c.name || c.business || "").split(" ")[0] || "Coach";
+function ago(ts) { if (!ts) return "never"; const m = (Date.now() - new Date(ts)) / 60000; return m < 60 ? Math.max(1, Math.round(m)) + " min ago" : m < 1440 ? Math.round(m / 60) + " hrs ago" : Math.round(m / 1440) + " days ago"; }
+
+function targetsFor(c) {
+  const t = {};
+  for (const [k, m] of Object.entries(METRICS)) { const o = (c.targets || {})[k] || {}; t[k] = { ...m, good: has(o.good) ? +o.good : m.good, ok: has(o.ok) ? +o.ok : m.ok }; }
+  return t;
+}
+function rag(k, v, T) {
+  if (v === null || v === undefined || !isFinite(v)) return "none";
+  const m = T[k]; if (!m) return "none";
+  return m.dir === "low" ? (v <= m.good ? "good" : v <= m.ok ? "ok" : "bad") : (v >= m.good ? "good" : v >= m.ok ? "ok" : "bad");
+}
+const tgt = m => (m.dir === "low" ? "≤ " : "≥ ") + fmt(m.good, m.fmt);
+
+/* ---- data model: merge CRM numbers with what the coach typed ---- */
+const FUNNEL_KEYS = ["leads", "calls_booked", "calls_attended", "trials_held", "trials_booked", "trials_attended", "new_clients", "cancellations", "new_fees"];
+const synced = c => c.crm_connected && !!c.last_sync && (c.crm_weeks || []).length > 0;
+function weekRows(c) {
+  const map = new Map(), sy = synced(c);
+  if (sy) for (const w of c.crm_weeks || []) map.set(w.week_start, { ...w, ad_spend: null });
+  for (const w of c.weeks || []) {
+    const row = map.get(w.week_start) || { week_start: w.week_start };
+    row.ad_spend = w.ad_spend; row.notes = w.notes;
+    if (!sy) for (const k of FUNNEL_KEYS) row[k] = w[k];
+    map.set(w.week_start, row);
+  }
+  return [...map.values()].sort((a, b) => a.week_start < b.week_start ? -1 : 1);
+}
+function sumWeeks(rows, c) {
+  const s = { weeks: rows.length, ad_spend: 0, spend_weeks: 0, leads: 0, calls_booked: 0, calls_attended: 0, trials_held: 0, trials_booked: 0, trials_attended: 0, new_clients: 0, cancellations: 0, first_month: 0, leads_called: 0, called_5min: 0, missed_calls: 0 };
+  for (const w of rows) {
+    for (const k of ["leads", "calls_booked", "calls_attended", "trials_held", "trials_booked", "trials_attended", "new_clients", "cancellations", "leads_called", "called_5min", "missed_calls"]) s[k] += n(w[k]);
+    if (has(w.ad_spend)) { s.ad_spend += n(w.ad_spend); s.spend_weeks++; }
+    s.first_month += n(w.new_fees) > 0 ? n(w.new_fees) : n(w.new_clients) * n(c.avg_fee);
+  }
+  return s;
+}
+function derive(s, c) {
+  const spend = s.spend_weeks ? s.ad_spend : null;
+  return {
+    called_5min: c.sync_info?.calls_tracked ? pct(s.called_5min, s.leads) : null,
+    call_book_rate: pct(s.calls_booked, s.leads), call_show_rate: pct(s.calls_attended, s.calls_booked), call_to_trial: pct(s.trials_booked, s.calls_attended),
+    hold_rate: pct(s.trials_held, s.leads), confirm_rate: pct(s.trials_booked, s.trials_held),
+    show_rate: pct(s.trials_attended, s.trials_booked), trial_to_client: pct(s.new_clients, s.trials_attended),
+    cpl: spend === null ? null : div(spend, s.leads), cost_per_client: spend === null ? null : div(spend, s.new_clients),
+    fm_roas: spend === null ? null : div(s.first_month, spend), lt_roas: spend === null ? null : div(s.first_month * Math.max(1, n(c.avg_months)), spend),
+  };
+}
+function periodRange(p) {
+  const lm = lastMonday();
+  const weeks = { "4w": 4, "12w": 12, "26w": 26 }[p];
+  if (weeks) { const from = addDays(lm, -7 * (weeks - 1)); return { from, to: lm, prevFrom: addDays(from, -7 * weeks), prevTo: addDays(from, -7), label: `last ${weeks} weeks` }; }
+  return { from: thisMonday(), to: thisMonday(), label: "this week so far" };
+}
+const inRange = (rows, a, b) => rows.filter(w => w.week_start >= iso(a) && w.week_start <= iso(b));
+
+function monthRows(c) {
+  const crm = new Map((c.crm_months || []).map(m => [m.month, m]));
+  const man = new Map((c.months || []).map(m => [m.month, m]));
+  const wk = weekRows(c), sy = synced(c);
+  const keys = new Set([...(sy ? crm.keys() : []), ...man.keys()]);
+  const out = [];
+  for (const k of [...keys].sort()) {
+    const a = crm.get(k) || {}, m = man.get(k) || {};
+    const s = sumWeeks(wk.filter(w => w.week_start.slice(0, 7) === k.slice(0, 7)), c);
+    const revenue = sy ? n(a.revenue) + n(m.other_revenue) : (has(m.revenue) || has(m.other_revenue) ? n(m.revenue) + n(m.other_revenue) : null);
+    const members = sy ? n(a.members_end) + n(m.other_members) : (has(m.members_end) ? n(m.members_end) + n(m.other_members) : null);
+    const hasCosts = ["cost_venue", "cost_wages", "cost_software", "cost_kit", "cost_other"].some(f => has(m[f]));
+    const costs = n(m.cost_venue) + n(m.cost_wages) + n(m.cost_software) + n(m.cost_kit) + n(m.cost_other) + s.ad_spend;
+    const profit = revenue !== null && hasCosts ? revenue - costs : null;
+    out.push({ month: k, a, m, s, revenue, members, costs, hasCosts, profit, margin: profit !== null && revenue > 0 ? profit / revenue * 100 : null });
+  }
+  for (let i = 1; i < out.length; i++) { const prev = out[i - 1]; out[i].churn = prev.members ? out[i].s.cancellations / prev.members * 100 : null; }
+  if (out[0]) out[0].churn = null;
+  return out;
+}
+
+/* ---- issues: what to fix, most urgent first ---- */
+function issues(c) {
+  const T = targetsFor(c), info = c.sync_info || {}, rows = weekRows(c);
+  const R = periodRange("4w"), D = derive(sumWeeks(inRange(rows, R.from, R.to), c), c);
+  const out = [], fn = firstName(c);
+  if (c.sync_error) out.push({ sev: "bad", key: "sync", title: "CRM connection needs fixing", body: c.sync_error, msg: null });
+  if (info.missed_calls_14d > 0) out.push({ sev: info.missed_calls_14d >= 3 ? "bad" : "ok", key: "missed", title: `${info.missed_calls_14d} parent call${info.missed_calls_14d > 1 ? "s" : ""} to your business number went unanswered`, body: "Last 14 days. These are people ready to buy. Turn on app notifications and ring them back the same day.", msg: `${fn}, ${info.missed_calls_14d} parent${info.missed_calls_14d > 1 ? "s" : ""} rang your business number in the last fortnight and nobody picked up. That's people ready to buy. Get the app notifications on and call them back today.` });
+  if (info.calls_tracked && info.leads_14d >= 3 && n(info.uncalled_leads_14d) / info.leads_14d >= 0.5) out.push({ sev: "bad", key: "uncalled", title: `${info.uncalled_leads_14d} of ${info.leads_14d} new leads haven't been called from the CRM`, body: "Last 14 days. Call from the HighLevel app the minute the alert lands. Calls from your own phone can't be seen, so they count as not called.", msg: `${fn}, ${info.uncalled_leads_14d} of your ${info.leads_14d} leads in the last 2 weeks didn't get a call from the CRM. Call them from the HighLevel app the second the alert comes in. It's the cheapest win in your business.` });
+  const unm = n(info.unmarked_calls) + n(info.unmarked_trials);
+  if (unm > 0) out.push({ sev: unm >= 5 ? "bad" : "ok", key: "unmarked", title: `${unm} appointment${unm > 1 ? "s" : ""} not marked showed or no-show`, body: `${n(info.unmarked_calls)} call${n(info.unmarked_calls) === 1 ? "" : "s"} and ${n(info.unmarked_trials)} trial${n(info.unmarked_trials) === 1 ? "" : "s"} in the last 60 days. Until they're marked, your show rates are guesses. Mark them in the calendar.`, msg: `${fn}, you've got ${unm} calls and trials not marked showed or no-show. Until they're marked your numbers are guessing. Ten minutes in the calendar tonight sorts it.` });
+  if (info.past_due > 0) out.push({ sev: "ok", key: "pastdue", title: `${info.past_due} member payment${info.past_due > 1 ? "s" : ""} failed and still unpaid`, body: "Chase it today: Payments › Subscriptions › send a card update link.", msg: `${fn}, ${info.past_due} member payment${info.past_due > 1 ? "s have" : " has"} failed and not been paid. Chase it today before it turns into a cancellation.` });
+  const order = (c.flow === "nocall" ? ["hold_rate", "confirm_rate"] : ["call_book_rate", "call_show_rate", "call_to_trial"]).concat(["show_rate", "trial_to_client", "cpl", "cost_per_client"]);
+  for (const k of order) {
+    if (rag(k, D[k], T) !== "bad") continue;
+    if ((k === "call_show_rate" || k === "show_rate") && unm >= 5) continue; // unmarked appointments make these unreliable
+    out.push({ sev: "bad", key: k, title: `${T[k].label}: ${fmt(D[k], T[k].fmt)} (target ${tgt(T[k])})`, body: ADVICE[k], msg: `${fn}, your ${T[k].label.toLowerCase()} is ${fmt(D[k], T[k].fmt)} over the last 4 weeks against a target of ${tgt(T[k])}. ${ADVICE[k]}` });
+    break;
+  }
+  const lw = rows.find(w => w.week_start === iso(lastMonday()));
+  out.adSpendMissing = !lw || !has(lw.ad_spend);
+  return out;
+}
+
+/* ---- API ---- */
+async function rpc(fn, args) {
+  const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + fn, { method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY }, body: JSON.stringify(args) });
+  const txt = await r.text(); let body = null; try { body = txt ? JSON.parse(txt) : null; } catch (e) { body = txt; }
+  if (!r.ok) { const e = new Error((body && body.message) || "Request failed"); e.status = r.status; throw e; }
+  return body;
+}
+function toast(msg, err) { const t = document.createElement("div"); t.className = "toast" + (err ? " err" : ""); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), err ? 4500 : 2600); }
+
+/* ---- boot ---- */
+async function boot() {
+  const url = new URL(location.href), fromUrl = url.searchParams.get("c");
+  if (fromUrl) { url.searchParams.delete("c"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
+  let code = fromUrl; if (!code) { try { code = localStorage.getItem("s2s_dash_code"); } catch (e) {} }
+  if (!code) return renderLogin();
+  signIn(code);
+}
+async function signIn(code) {
+  app.innerHTML = '<div class="login"><p class="muted">Loading your numbers…</p></div>';
+  try {
+    S.me = await rpc("kpi_me", { p_code: code }); S.code = code;
+    try { localStorage.setItem("s2s_dash_code", code); } catch (e) {}
+    if (S.me.is_admin) { S.tab = "admin"; await loadAdmin(); }
+    render();
+  } catch (e) {
+    try { localStorage.removeItem("s2s_dash_code"); } catch (er) {}
+    renderLogin(/invalid_code/.test(e.message) ? "That link isn't recognised. Use the link Robbie sent you, or ask him for a new one." : "Couldn't reach the dashboard. Check your connection and try again.");
+  }
+}
+const loadAdmin = async () => { S.admin = await rpc("kpi_admin_all", { p_code: S.code }); };
+function logo() {
+  return `<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7038E6"/><stop offset="1" stop-color="#A47BFF"/></linearGradient></defs><path d="M16 3 L29 27 H3 Z" fill="none" stroke="url(#lg)" stroke-width="2.2" stroke-linejoin="round"/><path d="M8.2 21.5 H23.8 M10.8 16.8 H21.2 M13.4 12.1 H18.6" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+function renderLogin(err) {
+  app.innerHTML = `<div class="wrap login"><form class="card" id="login-form">${logo()}
+    <div style="display:grid;gap:6px"><h2>Business Dashboard</h2><p class="muted small">Open the private link Robbie sent you, or paste your access code below.</p></div>
+    <label for="code-input">Access code<input id="code-input" autocomplete="off" spellcheck="false" placeholder="32-character code"></label>
+    ${err ? `<p class="small" style="color:var(--bad)">${esc(err)}</p>` : ""}
+    <button class="btn" type="submit">Open my dashboard</button></form></div>`;
+  document.getElementById("login-form").addEventListener("submit", e => { e.preventDefault(); const v = document.getElementById("code-input").value.trim().replace(/^.*[?&]c=/, ""); if (v) signIn(v); });
+}
+
+/* ---- shell ---- */
+const coachInView = () => S.viewing || S.me;
+const readOnly = () => !!S.viewing;
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+function render() {
+  const me = S.me, c = coachInView();
+  let tabs;
+  if (me.is_admin && !S.viewing) tabs = [["admin", "All coaches"], ["manage", "Coaches & links"]];
+  else { tabs = [["dash", "Dashboard"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
+  if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
+  app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
+      <div class="brand">${logo()}<div class="brand-text"><b>BUSINESS DASHBOARD</b><span>${esc(S.viewing ? (c.business || c.name) : me.is_admin ? "Systems to Scale · all coaches" : (c.business || c.name))}</span></div></div>
+      <button class="btn-ghost" id="logout">Log out</button></div>
+    <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</nav></div></header>
+  <main class="wrap" id="main"></main>`;
+  app.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { S.tab = b.dataset.tab; render(); scrollTo(0, 0); }));
+  document.getElementById("logout").addEventListener("click", () => { try { localStorage.removeItem("s2s_dash_code"); } catch (e) {} Object.assign(S, { code: null, me: null, admin: null, viewing: null }); renderLogin(); });
+  const main = document.getElementById("main");
+  if (S.viewing) {
+    const b = el("div", "banner", `<span>Viewing <b>${esc(c.business || c.name)}</b>. Read-only.</span><button class="btn-ghost" id="back">Back to all coaches</button>`);
+    main.appendChild(b); b.querySelector("#back").addEventListener("click", () => { S.viewing = null; S.tab = "admin"; render(); });
+  }
+  ({ dash: viewDash, week: viewWeek, money: viewMoney, settings: viewSettings, admin: viewAdmin, manage: viewManage })[S.tab](main);
+}
+function kpi(label, value, foot, r, delta) { return `<div class="kpi" data-rag="${r || "none"}"><span class="kpi-label">${esc(label)}</span><span class="kpi-value">${value}</span><div class="kpi-foot"><span>${foot || ""}</span>${delta || ""}</div></div>`; }
+function delta(v, p, better) {
+  if (v === null || p === null || p === undefined || !isFinite(v) || !isFinite(p)) return "";
+  const d = v - p; if (Math.round(d) === 0) return `<span>no change</span>`;
+  const good = better === "low" ? d < 0 : d > 0;
+  return `<span class="${good ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${Math.abs(Math.round(d))}</span>`;
+}
+const ragColour = r => r === "good" ? "var(--good)" : r === "ok" ? "var(--ok)" : r === "bad" ? "var(--bad)" : "var(--fg-2)";
+
+/* ---- coach dashboard ---- */
+function viewDash(main) {
+  const c = coachInView(), T = targetsFor(c), rows = weekRows(c), info = c.sync_info || {};
+  const months = monthRows(c), nowM = months.find(m => m.month === monthKey(new Date())), prevM = months.find(m => m.month === prevMonthKey());
+  const lastFull = [...months].reverse().find(m => m.month < monthKey(new Date()) && m.profit !== null);
+  if (!rows.length && !months.length) {
+    main.appendChild(el("div", "card empty", c.crm_connected ? `<h3>Your numbers are on their way</h3><p class="muted small">Your CRM is connected. The first sync runs within the hour.</p>` : `<h3>No numbers yet</h3><p class="muted small">Add last week's numbers and your dashboard fills in straight away.</p>${readOnly() ? "" : '<button class="btn" id="go-week">Add last week\'s numbers</button>'}`));
+    main.querySelector("#go-week")?.addEventListener("click", () => { S.tab = "week"; render(); });
+    return;
+  }
+  const iss = issues(c);
+
+  // 1. the Monday job: ad spend
+  if (iss.adSpendMissing && !readOnly()) {
+    const box = el("div", "monday", `<div><span class="eyebrow">Your Monday job</span><h3>Last week's ad spend (${weekLabel(iso(lastMonday()))})</h3><p class="tiny">From Meta Ads Manager, Monday to Sunday. Put 0 if you didn't run ads.</p></div>
+      <form id="spend-form"><input id="spend" type="number" inputmode="decimal" min="0" step="0.01" placeholder="£" aria-label="Ad spend in pounds"><button class="btn" type="submit">Save</button></form>`);
+    main.appendChild(box);
+    box.querySelector("#spend-form").addEventListener("submit", async e => {
+      e.preventDefault(); const v = box.querySelector("#spend").value; if (v === "") return;
+      try { S.me = await rpc("kpi_save_week", { p_code: S.code, p_week: iso(lastMonday()), p_data: { ad_spend: v } }); toast("Saved. That's your Monday done."); render(); }
+      catch (er) { toast("Didn't save. Check your connection and try again.", true); }
+    });
+  }
+
+  // 2. health
+  const members = nowM?.members ?? null, membersPrev = prevM?.members ?? null;
+  const mrr = synced(c) ? n(info.mrr_now) + n(nowM?.m?.other_revenue) : null;
+  const R4 = periodRange("4w"), s4 = sumWeeks(inRange(rows, R4.from, R4.to), c), p4 = sumWeeks(inRange(rows, R4.prevFrom, R4.prevTo), c);
+  const churnAvg = (() => { const xs = months.filter(m => m.churn !== null && m.churn !== undefined).slice(-3); return xs.length ? xs.reduce((a, m) => a + m.churn, 0) / xs.length : null; })();
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">How the business is running</span><h2>${greeting(c)}</h2></div>${synced(c) ? `<span class="tiny">Updated from your CRM ${ago(c.last_sync)}</span>` : ""}</div>
+  <div class="health">
+    ${kpi("Paying members", fmt(members, "int"), membersPrev !== null ? `${fmt(membersPrev, "int")} at the end of last month` : "", "none", delta(members, membersPrev, "high"))}
+    ${kpi(synced(c) ? "Monthly recurring revenue" : "Revenue this month", fmt(synced(c) ? mrr : nowM?.revenue, "gbp0"), synced(c) ? "active subscriptions + outside the CRM" : "")}
+    ${kpi("New clients", fmt(s4.new_clients, "int"), `last 4 weeks · ${fmt(s4.cancellations, "int")} cancelled`, "none", delta(s4.new_clients, p4.weeks ? p4.new_clients : null, "high"))}
+    ${lastFull ? kpi(`Profit in ${monthShort(lastFull.month)}`, fmt(lastFull.profit, "gbp0"), `${fmt(lastFull.margin, "pct")} margin · target ${tgt(T.margin)}`, rag("margin", lastFull.margin, T))
+      : kpi("Profit", "—", readOnly() ? "no costs entered yet" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add last month's costs</a> to see it`)}
+  </div>
+  ${churnAvg !== null ? `<p class="tiny">Monthly churn: <b style="color:${ragColour(rag("churn", churnAvg, T))}">${fmt(churnAvg, "pct")}</b> (average of recent months, target ${tgt(T.churn)})</p>` : ""}`);
+  main.appendChild(sec);
+  sec.querySelector("#add-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "money"; render(); });
+
+  // 3. fix this first
+  const top = iss.slice(0, 3);
+  main.appendChild(el("section", "section", `<div class="section-head"><div><span class="eyebrow">Fix this first</span><h2>${top.length ? (top.length === 1 ? "One thing to sort this week" : `${top.length} things to sort this week`) : "Nothing's leaking"}</h2></div></div>
+   <div class="fixes">${top.length ? top.map(i => `<div class="fix ${i.sev}"><span class="dot"></span><div><h3>${esc(i.title)}</h3><p class="muted small">${esc(i.body)}</p></div></div>`).join("")
+     : `<div class="fix good"><span class="dot"></span><div><h3>Every step is on target for the last 4 weeks</h3><p class="muted small">This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div></div>`}</div>`));
+
+  // 4. funnel
+  const R = periodRange(S.period), cur = sumWeeks(inRange(rows, R.from, R.to), c), D = derive(cur, c);
+  const steps = [{ l: "Leads", v: cur.leads }];
+  if (info.calls_tracked) steps.push({ l: "Called within 5 min", v: cur.called_5min, k: "called_5min", side: true });
+  if (c.flow === "nocall") steps.push({ l: "Trial spots held", v: cur.trials_held, k: "hold_rate" }, { l: "Trials confirmed", v: cur.trials_booked, k: "confirm_rate" });
+  else steps.push({ l: "Calls booked", v: cur.calls_booked, k: "call_book_rate", side: true }, { l: "Calls attended", v: cur.calls_attended, k: "call_show_rate" }, { l: "Trials booked", v: cur.trials_booked, k: "call_to_trial" });
+  steps.push({ l: "Trials attended", v: cur.trials_attended, k: "show_rate" }, { l: "New clients", v: cur.new_clients, k: "trial_to_client" });
+  const topV = Math.max(1, ...steps.map(s => s.v));
+  const periods = [["4w", "Last 4 weeks"], ["12w", "Last 12 weeks"], ["26w", "Last 6 months"], ["tw", "This week so far"]];
+  const fs = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Your funnel</span><h2>Where leads turn into clients</h2></div>
+    <select class="select-sm" id="period" aria-label="Period">${periods.map(([k, l]) => `<option value="${k}" ${S.period === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+  <div class="card"><div class="funnel">${steps.map(s => {
+    const v = s.k ? D[s.k] : null, r = s.k ? rag(s.k, v, T) : "none";
+    return `<div class="f-row"><span class="f-label">${s.l}</span><div class="f-track"><div class="f-bar" style="width:${Math.min(100, s.v / topV * 100)}%"></div></div><span class="f-val">${fmt(s.v, "int")}</span>
+      <span class="f-rate">${s.k ? `<span class="pill ${r}" title="Target ${esc(tgt(T[s.k]))}">${fmt(v, "pct")} ${s.side ? "of leads" : "of above"}</span>` : ""}</span></div>`;
+  }).join("")}</div>
+  <p class="tiny" style="margin-top:12px">Colour = against your target. ${synced(c) ? "Counted from your CRM calendars, pipeline, calls and Stripe." : ""}</p></div>`);
+  main.appendChild(fs);
+  fs.querySelector("#period").addEventListener("change", e => { S.period = e.target.value; render(); });
+
+  // 5. are the ads paying
+  main.appendChild(el("section", "section", `<div class="section-head"><div><span class="eyebrow">Are the ads paying?</span><h2>${R.label[0].toUpperCase() + R.label.slice(1)}</h2></div></div>
+  ${cur.spend_weeks ? `<div class="returns">
+    ${kpi("Ad spend", fmt(cur.ad_spend, "gbp0"), cur.spend_weeks < cur.weeks ? `${cur.spend_weeks} of ${cur.weeks} weeks entered` : "")}
+    ${kpi("Cost per lead", fmt(D.cpl, "gbp"), `target ${tgt(T.cpl)}`, rag("cpl", D.cpl, T))}
+    ${kpi("Cost to get a client", fmt(D.cost_per_client, "gbp0"), `target ${tgt(T.cost_per_client)}`, rag("cost_per_client", D.cost_per_client, T))}
+    ${kpi("First-month ROAS", fmt(D.fm_roas, "x"), `target ${tgt(T.fm_roas)}`, rag("fm_roas", D.fm_roas, T))}
+    ${kpi("Lifetime ROAS", fmt(D.lt_roas, "x"), `client stays ${fmt(n(c.avg_months), "int")} months on average`, rag("lt_roas", D.lt_roas, T))}
+  </div>` : `<div class="card"><p class="muted small">Enter your weekly ad spend and this shows cost per lead, cost to get a client and return on ad spend.</p></div>`}`));
+
+  // 6. one chart
+  const last12 = []; for (let i = 11; i >= 0; i--) { const wk = iso(addDays(lastMonday(), -7 * i)); last12.push({ wk, w: rows.find(x => x.week_start === wk) }); }
+  const ch = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Last 12 weeks</span><h2>Leads and new clients</h2></div>
+    <div class="legend"><span><i style="background:#2A3F5F"></i>Leads</span><span><i style="background:var(--accent-2)"></i>New clients</span></div></div>`);
+  ch.appendChild(trendCard(last12));
+  main.appendChild(ch);
+}
+function greeting(c) { const h = new Date().getHours(); return (h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening") + ", " + esc(firstName(c)); }
+function trendCard(pts) {
+  const card = el("div", "card");
+  const W = 640, H = 210, L = 34, Rr = 8, Tt = 14, B = 24;
+  const maxV = Math.max(4, ...pts.map(p => n(p.w?.leads))) * 1.1;
+  const band = (W - L - Rr) / pts.length, bw = band * 0.34;
+  const x = i => L + band * i + band / 2, y = v => Tt + (H - Tt - B) * (1 - v / maxV);
+  const ticks = [0, Math.round(maxV / 2), Math.floor(maxV)];
+  card.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Leads and new clients per week, last 12 weeks">
+    ${ticks.map(t => `<line x1="${L}" x2="${W - Rr}" y1="${y(t)}" y2="${y(t)}" stroke="#1C3150"/><text x="${L - 6}" y="${y(t) + 3}" text-anchor="end">${t}</text>`).join("")}
+    ${pts.map((p, i) => { const l = n(p.w?.leads), c = n(p.w?.new_clients);
+      return `<g><title>${weekLabel(p.wk)}: ${l} leads, ${c} new clients</title>
+        <rect x="${x(i) - bw - 1}" y="${y(l)}" width="${bw}" height="${H - B - y(l)}" rx="3" fill="#2A3F5F"/>
+        <rect x="${x(i) + 1}" y="${y(c)}" width="${bw}" height="${H - B - y(c)}" rx="3" fill="#A47BFF"/>
+        ${c ? `<text x="${x(i) + 1 + bw / 2}" y="${y(c) - 4}" text-anchor="middle" style="fill:#FFFFFF">${c}</text>` : ""}
+        ${i % 2 ? `<text x="${x(i)}" y="${H - 7}" text-anchor="middle">${parseISO(p.wk).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</text>` : ""}</g>`; }).join("")}
+  </svg>`;
+  return card;
+}
+
+/* ---- weekly numbers (only for coaches without a CRM connection) ---- */
+const FIELDS_WEEK = [
+  { k: "ad_spend", label: "Ad spend (£)", help: "Meta Ads Manager, Monday to Sunday", money: true },
+  { k: "leads", label: "Leads" },
+  { k: "calls_booked", label: "Calls booked", flow: "call" }, { k: "calls_attended", label: "Calls attended", flow: "call" },
+  { k: "trials_held", label: "Trial spots held", flow: "nocall" },
+  { k: "trials_booked", label: "Trials booked", labelNocall: "Trials confirmed (replied YES)" },
+  { k: "trials_attended", label: "Trials attended" }, { k: "new_clients", label: "New clients" }, { k: "cancellations", label: "Cancellations" },
+  { k: "new_fees", label: "New clients' first month (£)", help: "Blank = your average fee", money: true },
+];
+function inputHTML(f, row, c) {
+  const label = c.flow === "nocall" && f.labelNocall ? f.labelNocall : f.label;
+  return `<label for="f-${f.k}">${esc(label)}${f.help ? ` <small>${esc(f.help)}</small>` : ""}<input id="f-${f.k}" type="number" inputmode="decimal" min="0" step="${f.money ? "0.01" : "1"}" value="${esc(has(row[f.k]) ? row[f.k] : "")}" ${readOnly() ? "disabled" : ""}></label>`;
+}
+function viewWeek(main) {
+  const c = coachInView(), weeks = c.weeks || [];
+  const opts = []; for (let i = 0; i < 16; i++) opts.push(iso(addDays(thisMonday(), -7 * i)));
+  if (!S.weekSel || !opts.includes(S.weekSel)) S.weekSel = iso(lastMonday());
+  const w = weeks.find(x => x.week_start === S.weekSel) || {};
+  const fields = FIELDS_WEEK.filter(f => !f.flow || f.flow === c.flow);
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Every Monday, for the week before</span><h2>Weekly numbers</h2></div>
+    <select class="select-sm" id="week-sel" aria-label="Week">${opts.map(o => `<option value="${o}" ${o === S.weekSel ? "selected" : ""}>${weekLabel(o)}${o === iso(lastMonday()) ? " (last week)" : ""}${weeks.some(x => x.week_start === o) ? " ✓" : ""}</option>`).join("")}</select></div>
+  <form class="card" id="week-form"><div class="form-group"><p class="muted small">Your CRM isn't connected yet, so these are typed in. Once Robbie connects it, everything except ad spend fills in by itself.</p>
+    <div class="grid-form">${fields.map(f => inputHTML(f, w, c)).join("")}</div></div>
+    ${readOnly() ? "" : `<div class="form-group"><div class="form-actions"><button class="btn" type="submit">Save ${weekLabel(S.weekSel)}</button></div></div>`}</form>`);
+  main.appendChild(sec);
+  sec.querySelector("#week-sel").addEventListener("change", e => { S.weekSel = e.target.value; render(); });
+  sec.querySelector("#week-form").addEventListener("submit", async e => {
+    e.preventDefault(); const data = {}; for (const f of fields) data[f.k] = e.target.querySelector("#f-" + f.k).value;
+    try { S.me = await rpc("kpi_save_week", { p_code: S.code, p_week: S.weekSel, p_data: data }); toast("Saved " + weekLabel(S.weekSel)); S.tab = "dash"; render(); }
+    catch (er) { toast("Didn't save. Check your connection and try again.", true); }
+  });
+}
+
+/* ---- money: monthly costs, outside-CRM revenue, P&L ---- */
+function viewMoney(main) {
+  const c = coachInView(), T = targetsFor(c), sy = synced(c);
+  const opts = []; const now = new Date(); for (let i = 0; i < 13; i++) opts.push(iso(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  if (!S.monthSel || !opts.includes(S.monthSel)) S.monthSel = opts[1];
+  const m = (c.months || []).find(x => x.month === S.monthSel) || {};
+  const crm = (c.crm_months || []).find(x => x.month === S.monthSel);
+  const fields = [
+    ...(sy ? [] : [{ k: "revenue", label: "Revenue taken (£)", help: "Everything that came in", money: true }, { k: "members_end", label: "Paying members at month end" }]),
+    { k: "other_revenue", label: sy ? "Revenue outside the CRM (£)" : "Other revenue (£)", help: "Cash, bank transfer, camps, 1-2-1s", money: true },
+    { k: "other_members", label: "Members paying outside the CRM", help: "Cash or bank transfer members" },
+    { k: "cost_venue", label: "Venue hire (£)", money: true }, { k: "cost_wages", label: "Coach wages (£)", money: true },
+    { k: "cost_software", label: "Software (£)", help: "CRM, apps, subscriptions", money: true },
+    { k: "cost_kit", label: "Kit and equipment (£)", money: true }, { k: "cost_other", label: "Other costs (£)", money: true },
+  ];
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Once a month · Tier 1 business model</span><h2>Money in, money out</h2></div>
+    <select class="select-sm" id="month-sel" aria-label="Month">${opts.map(o => `<option value="${o}" ${o === S.monthSel ? "selected" : ""}>${monthLabel(o)}${(c.months || []).some(x => x.month === o) ? " ✓" : ""}</option>`).join("")}</select></div>
+  <form class="card" id="month-form"><div class="form-group">
+    ${sy ? `<p class="muted small">From your CRM for ${monthLabel(S.monthSel)}: <b style="color:var(--fg)">${fmt(n(crm?.revenue), "gbp0")}</b> taken through Stripe and <b style="color:var(--fg)">${fmt(n(crm?.members_end), "int")}</b> paying members. Ad spend comes from your Monday entries. Add everything else below.</p>` : ""}
+    <div class="grid-form">${fields.map(f => inputHTML(f, m, c)).join("")}</div></div>
+    ${readOnly() ? "" : `<div class="form-group"><div class="form-actions"><button class="btn" type="submit">Save ${monthLabel(S.monthSel)}</button></div></div>`}</form>`);
+  main.appendChild(sec);
+  sec.querySelector("#month-sel").addEventListener("change", e => { S.monthSel = e.target.value; render(); });
+  sec.querySelector("#month-form").addEventListener("submit", async e => {
+    e.preventDefault(); const data = {}; for (const f of fields) data[f.k] = e.target.querySelector("#f-" + f.k).value;
+    if (sy) { data.revenue = m.revenue ?? ""; data.members_end = m.members_end ?? ""; }
+    try { S.me = await rpc("kpi_save_month", { p_code: S.code, p_month: S.monthSel, p_data: data }); toast("Saved " + monthLabel(S.monthSel)); render(); }
+    catch (er) { toast("Didn't save. Check your connection and try again.", true); }
+  });
+
+  const pl = monthRows(c).slice(-6);
+  if (!pl.length) return;
+  const line = (label, f, fm, cls) => `<tr class="${cls || ""}"><td>${label}</td>${pl.map(r => { const v = f(r); return `<td>${v === null ? "—" : fmt(v, fm)}</td>`; }).join("")}</tr>`;
+  const cost = k => r => has(r.m[k]) ? n(r.m[k]) : null;
+  main.appendChild(el("section", "section", `<div class="section-head"><div><h2>Profit and loss</h2><p class="tiny">Profit shows once that month's costs are in.</p></div></div>
+  <div class="table-wrap"><table><thead><tr><th></th>${pl.map(r => `<th>${monthShort(r.month)}</th>`).join("")}</tr></thead><tbody>
+    ${sy ? line("Through the CRM", r => n(r.a.revenue), "gbp0") + line("Outside the CRM", r => has(r.m.other_revenue) ? n(r.m.other_revenue) : null, "gbp0") : ""}
+    ${line("Revenue", r => r.revenue, "gbp0", "total")}
+    ${line("Ad spend", r => r.s.spend_weeks ? r.s.ad_spend : null, "gbp0")}
+    ${line("Venue hire", cost("cost_venue"), "gbp0")}${line("Coach wages", cost("cost_wages"), "gbp0")}${line("Software", cost("cost_software"), "gbp0")}${line("Kit and equipment", cost("cost_kit"), "gbp0")}${line("Other", cost("cost_other"), "gbp0")}
+    ${line("Profit", r => r.profit, "gbp0", "total")}
+    <tr><td>Margin</td>${pl.map(r => `<td class="c-${rag("margin", r.margin, T)}">${fmt(r.margin, "pct")}</td>`).join("")}</tr>
+    ${line("Members at month end", r => r.members, "int")}${line("New clients", r => r.s.new_clients, "int")}${line("Cancellations", r => r.s.cancellations, "int")}
+    <tr><td>Churn</td>${pl.map(r => `<td class="c-${rag("churn", r.churn, T)}">${fmt(r.churn, "pct")}</td>`).join("")}</tr>
+  </tbody></table></div>`));
+}
+
+/* ---- settings ---- */
+function viewSettings(main) {
+  const c = coachInView(), T = targetsFor(c);
+  const keys = Object.keys(METRICS).filter(k => !METRICS[k].flow || METRICS[k].flow === c.flow);
+  const dis = readOnly() ? "disabled" : "";
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Settings</span><h2>Your business</h2></div></div>
+  <form class="card" id="set-form"><div class="form-group"><div class="grid-form">
+    <label for="s-name">Your name<input id="s-name" value="${esc(c.name)}" ${dis}></label>
+    <label for="s-business">Business name<input id="s-business" value="${esc(c.business)}" ${dis}></label>
+    <label for="s-flow">Booking flow<select id="s-flow" ${dis}><option value="call" ${c.flow === "call" ? "selected" : ""}>Call flow (discovery calls)</option><option value="nocall" ${c.flow === "nocall" ? "selected" : ""}>No-call flow (straight to trial)</option></select></label>
+    <label for="s-fee">Average monthly fee (£)<input id="s-fee" type="number" min="0" step="0.01" value="${esc(c.avg_fee)}" ${dis}></label>
+    <label for="s-months">Months a client stays <small>Average. Used for lifetime ROAS</small><input id="s-months" type="number" min="1" step="0.5" value="${esc(c.avg_months)}" ${dis}></label>
+  </div></div>
+  <div class="form-group"><details class="more"><summary>Targets</summary>
+    <p class="tiny" style="margin-bottom:12px">Green at or better than "on target", amber up to "warning", red past it. These start as Robbie's numbers.</p>
+    <div class="target-grid">${keys.map(k => `<div class="target"><p>${esc(T[k].label)} <span class="tiny">(${T[k].dir === "low" ? "lower is better" : "higher is better"})</span></p>
+      <label for="t-${k}-g">On target<input id="t-${k}-g" type="number" step="any" value="${T[k].good}" ${dis}></label>
+      <label for="t-${k}-o">Warning<input id="t-${k}-o" type="number" step="any" value="${T[k].ok}" ${dis}></label></div>`).join("")}</div></details></div>
+  ${readOnly() ? "" : `<div class="form-group"><div class="form-actions"><button class="btn" type="submit">Save settings</button></div></div>`}</form>`);
+  main.appendChild(sec);
+  sec.querySelector("#set-form").addEventListener("submit", async e => {
+    e.preventDefault(); const f = e.target, targets = {};
+    for (const k of keys) { const g = +f.querySelector(`#t-${k}-g`).value, o = +f.querySelector(`#t-${k}-o`).value; if (g !== METRICS[k].good || o !== METRICS[k].ok) targets[k] = { good: g, ok: o }; }
+    try { S.me = await rpc("kpi_save_settings", { p_code: S.code, p_data: { name: f.querySelector("#s-name").value, business: f.querySelector("#s-business").value, flow: f.querySelector("#s-flow").value, avg_fee: f.querySelector("#s-fee").value, avg_months: f.querySelector("#s-months").value, targets } }); toast("Settings saved"); render(); }
+    catch (er) { toast("Didn't save. Try again.", true); }
+  });
+}
+
+/* ---- admin: all coaches ---- */
+function summary(c) {
+  const T = targetsFor(c), rows = weekRows(c), R = periodRange("4w");
+  const s = sumWeeks(inRange(rows, R.from, R.to), c), D = derive(s, c);
+  const months = monthRows(c), nowM = months.find(m => m.month === monthKey(new Date())), prevM = months.find(m => m.month === prevMonthKey());
+  const iss = issues(c);
+  return { c, T, s, D, iss, flags: iss.filter(i => i.sev === "bad").length, members: nowM?.members ?? null, membersPrev: prevM?.members ?? null, mrr: synced(c) ? n(c.sync_info?.mrr_now) + n(nowM?.m?.other_revenue) : null };
+}
+function crmStatus(c) {
+  if (c.sync_error) return `<span class="pill bad">CRM error</span>`;
+  if (c.crm_connected && c.last_sync) return `<span class="pill ${c.crm === "legacy" ? "ok" : "good"}">${c.crm === "legacy" ? "Legacy CRM" : "Synced"} ${ago(c.last_sync)}</span>`;
+  if (c.crm_connected) return `<span class="pill ok">First sync pending</span>`;
+  return `<span class="pill none">Typed in</span>`;
+}
+function viewAdmin(main) {
+  const list = (S.admin || []).filter(c => c.active).map(summary);
+  const tot = list.reduce((a, x) => (a.members += n(x.members), a.mrr += n(x.mrr), a.clients += x.s.new_clients, a.red += x.flags ? 1 : 0, a), { members: 0, mrr: 0, clients: 0, red: 0 });
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Monday review · ${weekLabel(iso(lastMonday()))}</span><h2>Your coaches</h2></div>
+    <button class="btn-ghost" id="refresh">Refresh</button></div>
+  <div class="health">
+    ${kpi("Coaches", fmt(list.length, "int"), `${list.filter(x => x.c.crm_connected).length} connected to the CRM`)}
+    ${kpi("Paying members", fmt(tot.members, "int"), `${fmt(tot.mrr, "gbp0")} a month across all coaches`)}
+    ${kpi("New clients", fmt(tot.clients, "int"), "last 4 weeks, all coaches")}
+    ${kpi("Coaches in the red", fmt(tot.red, "int"), "at least one red flag", tot.red ? "bad" : "good")}
+  </div>`);
+  main.appendChild(sec);
+  sec.querySelector("#refresh").addEventListener("click", async () => { await loadAdmin(); render(); toast("Up to date"); });
+
+  const msgs = list.filter(x => x.iss.some(i => i.msg)).sort((a, b) => b.flags - a.flags);
+  const ms = el("section", "section", `<div class="section-head"><div><span class="eyebrow">This week</span><h2>Message these coaches</h2><p class="tiny">Each coach's biggest issue, with a message you can copy. Tweak it so it sounds like you.</p></div></div>`);
+  if (!msgs.length) ms.appendChild(el("div", "card", `<p class="muted small">Nobody's in the red this week.</p>`));
+  for (const x of msgs) {
+    const i = x.iss.find(q => q.msg), more = x.iss.filter(q => q.msg).length - 1;
+    const card = el("div", "card msg", `<div class="msg-head"><h3>${esc(x.c.business || x.c.name)} <span class="pill ${i.sev}">${esc(i.title)}</span>${more > 0 ? `<span class="tiny">+${more} more</span>` : ""}</h3>
+      <div class="row"><button class="btn-ghost copy">Copy message</button><button class="btn-ghost open">Open dashboard</button></div></div><blockquote>${esc(i.msg)}</blockquote>`);
+    card.querySelector(".copy").addEventListener("click", ev => copy(i.msg, ev.target));
+    card.querySelector(".open").addEventListener("click", () => { S.viewing = x.c; S.tab = "dash"; render(); scrollTo(0, 0); });
+    ms.appendChild(card);
+  }
+  const missingSpend = list.filter(x => x.iss.adSpendMissing);
+  if (missingSpend.length) ms.appendChild(el("p", "tiny", `Ad spend not in yet for last week: ${missingSpend.map(x => esc(x.c.business || x.c.name)).join(", ")}.`));
+  main.appendChild(ms);
+
+  if (!list.length) return;
+  const sorted = [...list].sort((a, b) => b.flags - a.flags || n(b.members) - n(a.members));
+  const cell = (x, k) => `<td class="c-${rag(k, x.D[k], x.T)}">${fmt(x.D[k], k === "cost_per_client" ? "gbp0" : x.T[k].fmt)}</td>`;
+  const ts = el("section", "section", `<div class="section-head"><div><h2>Every coach, last 4 weeks</h2><p class="tiny">Coloured against each coach's targets. Tap a row to open their dashboard.</p></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Coach</th><th>CRM</th><th>Members</th><th>MRR</th><th>Leads</th><th>Called ≤5 min</th><th>Trial show</th><th>Trial → client</th><th>New clients</th><th>Cost / client</th><th>Lifetime ROAS</th><th>Flags</th></tr></thead>
+  <tbody>${sorted.map((x, i) => `<tr class="click" data-i="${i}"><td><b>${esc(x.c.business || x.c.name)}</b></td><td>${crmStatus(x.c)}</td>
+    <td>${fmt(x.members, "int")} ${x.membersPrev !== null && x.members !== null && x.members !== x.membersPrev ? `<span class="${x.members > x.membersPrev ? "up" : "down"}">${x.members > x.membersPrev ? "▲" : "▼"}${Math.abs(x.members - x.membersPrev)}</span>` : ""}</td>
+    <td>${fmt(x.mrr, "gbp0")}</td><td>${fmt(x.s.leads, "int")}</td>${cell(x, "called_5min")}${cell(x, "show_rate")}${cell(x, "trial_to_client")}<td>${fmt(x.s.new_clients, "int")}</td>${cell(x, "cost_per_client")}${cell(x, "lt_roas")}
+    <td>${x.flags ? `<span class="pill bad">${x.flags}</span>` : '<span class="pill good">0</span>'}</td></tr>`).join("")}</tbody></table></div>`);
+  main.appendChild(ts);
+  ts.querySelectorAll("tr.click").forEach(tr => tr.addEventListener("click", () => { S.viewing = sorted[+tr.dataset.i].c; S.tab = "dash"; render(); scrollTo(0, 0); }));
+}
+
+/* ---- admin: coaches & links ---- */
+const linkFor = code => location.origin + location.pathname + "?c=" + code;
+async function copy(text, btn) {
+  const was = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = "Copied"; } catch (e) { btn.textContent = "Copy failed: select the text instead"; }
+  setTimeout(() => { btn.textContent = was; }, 1800);
+}
+function viewManage(main) {
+  const add = el("section", "section", `<div class="section-head"><div><span class="eyebrow">New coach</span><h2>Add a coach</h2></div></div>
+  <form class="card" id="add-form"><div class="form-group"><div class="grid-form">
+    <label for="a-name">Coach's name<input id="a-name" required></label><label for="a-business">Business name<input id="a-business"></label>
+    <label for="a-flow">Booking flow<select id="a-flow"><option value="call">Call flow</option><option value="nocall">No-call flow</option></select></label></div></div>
+    <div class="form-group"><div class="form-actions"><button class="btn" type="submit">Create their link</button></div></div></form>`);
+  main.appendChild(add);
+  add.querySelector("#add-form").addEventListener("submit", async e => {
+    e.preventDefault(); const f = e.target;
+    try { const nc = await rpc("kpi_admin_add_coach", { p_code: S.code, p_name: f.querySelector("#a-name").value, p_business: f.querySelector("#a-business").value, p_flow: f.querySelector("#a-flow").value });
+      await loadAdmin(); render(); toast(`${nc.business || nc.name} added. Their link is below.`); }
+    catch (er) { toast("Couldn't add the coach. Try again.", true); }
+  });
+
+  const sec = el("section", "section", `<div class="section-head"><div><h2>Coaches, links and CRM</h2><p class="tiny">Each link is that coach's private login. Never share one coach's link with another, and never put your own link in a coach's CRM.</p></div></div>`);
+  for (const c of (S.admin || [])) {
+    const card = el("div", "card coach-admin", `<div class="row" style="justify-content:space-between"><h3>${esc(c.business || c.name)} ${c.active ? "" : '<span class="pill none">paused</span>'}</h3>${crmStatus(c)}</div>
+      <div class="row"><input readonly value="${esc(linkFor(c.code))}" aria-label="Private link for ${esc(c.business || c.name)}">
+        <button class="btn-ghost copy">Copy link</button><button class="btn-ghost newlink">New link</button><button class="btn-ghost pause">${c.active ? "Pause" : "Unpause"}</button></div>
+      <details class="more"><summary>CRM connection</summary>
+        <div class="grid-form">
+          <label>CRM version<select class="crm"><option value="new" ${c.crm === "new" ? "selected" : ""}>New CRM</option><option value="legacy" ${c.crm === "legacy" ? "selected" : ""}>Legacy CRM</option><option value="none" ${c.crm === "none" ? "selected" : ""}>Not connected</option></select></label>
+          <label>Location ID<input class="loc" value="${esc(c.ghl_location || "")}" placeholder="from the sub-account URL"></label>
+          <label>Read-only key <small>${c.crm_connected ? "Saved. Leave blank to keep it" : "Settings › Private Integrations"}</small><input class="tok" type="password" autocomplete="off" placeholder="pit-…"></label>
+        </div>
+        <div class="row" style="margin-top:12px"><button class="btn-ghost savecrm">Save connection</button><button class="btn-ghost sync">Sync now</button>${c.sync_error ? `<span class="status" style="color:var(--bad)">${esc(c.sync_error)}</span>` : ""}</div>
+      </details>`);
+    card.querySelector(".copy").addEventListener("click", ev => copy(linkFor(c.code), ev.target));
+    const nl = card.querySelector(".newlink");
+    nl.addEventListener("click", async () => {
+      if (nl.dataset.sure !== "1") { nl.dataset.sure = "1"; nl.textContent = "Tap again: the old link stops working"; return; }
+      await rpc("kpi_admin_new_link", { p_code: S.code, p_coach: c.id }); await loadAdmin(); render(); toast("New link made. Send it to the coach.");
+    });
+    const pz = card.querySelector(".pause");
+    pz.addEventListener("click", async () => {
+      if (c.active && pz.dataset.sure !== "1") { pz.dataset.sure = "1"; pz.textContent = "Tap again to pause"; return; }
+      await rpc("kpi_admin_set_active", { p_code: S.code, p_coach: c.id, p_active: !c.active }); await loadAdmin(); render();
+    });
+    card.querySelector(".savecrm").addEventListener("click", async () => {
+      try { await rpc("kpi_admin_set_crm", { p_code: S.code, p_coach: c.id, p_crm: card.querySelector(".crm").value, p_location: card.querySelector(".loc").value, p_token: card.querySelector(".tok").value });
+        await rpc("kpi_admin_sync_now", { p_code: S.code, p_coach: c.id }); await loadAdmin(); render(); toast("Saved. First sync is running: refresh in a minute."); }
+      catch (er) { toast("Couldn't save the connection.", true); }
+    });
+    card.querySelector(".sync").addEventListener("click", async ev => { await rpc("kpi_admin_sync_now", { p_code: S.code, p_coach: c.id }); ev.target.textContent = "Syncing… refresh in a minute"; });
+    sec.appendChild(card);
+  }
+  main.appendChild(sec);
+}
+
+boot();
+</script>
+</body>
+</html>
