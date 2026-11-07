@@ -243,6 +243,10 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
 .top-row > .brand { flex: 1; }
 .key-stat { display: flex; gap: 16px; align-items: center; }
 .key-stat .kpi-value { font-size: 34px; color: var(--accent-2); }
+.brand-text b.biz-name { font-size: 19px !important; font-weight: 800; letter-spacing: -.01em !important; line-height: 1.2; }
+.example-flag { padding: 10px 14px; border-radius: 10px; border: 1px dashed rgba(242,179,61,.6); background: rgba(242,179,61,.08); color: var(--fg-2); font-size: 13px; }
+.example-flag b { color: var(--ok); }
+@media (max-width: 600px) { .brand-text b.biz-name { font-size: 16px !important; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; } .brand-text .brand-kicker { font-size: 9px; } }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -528,7 +532,7 @@ async function signIn(code) {
   }
 }
 const loadAdmin = async () => { S.admin = await rpc("kpi_admin_all", { p_code: S.code }); };
-const displayName = c => c?.sync_info?.brand?.name || c?.business || c?.name || "";
+const displayName = c => c?.business || c?.sync_info?.brand?.name || c?.name || "";
 function brandMark(c) {
   const url = c?.sync_info?.brand?.logo;
   return url && /^https:\/\//.test(url) ? `<img class="coach-logo" src="${esc(url)}" alt="" onerror="this.replaceWith(document.createRange().createContextualFragment(window.__s2sLogo))">` : logo();
@@ -556,7 +560,7 @@ function render() {
   else { tabs = [["dash", "Business"], ["ads", "Marketing"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
   app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
-      ${S.viewing ? `<button class="back-btn" id="back" aria-label="Back to all coaches">‹ All coaches</button>` : ""}<div class="brand">${brandMark(S.viewing || !me.is_admin ? c : null)}<div class="brand-text"><span class="brand-kicker">Systems to Scale · Business Dashboard</span><b>${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
+      ${S.viewing ? `<button class="back-btn" id="back" aria-label="Back to all coaches">‹ All coaches</button>` : ""}<div class="brand">${S.viewing || !me.is_admin ? "" : logo()}<div class="brand-text"><span class="brand-kicker">Systems to Scale · Business Dashboard</span><b class="biz-name">${esc(S.viewing || !me.is_admin ? displayName(c) : "All coaches")}</b></div></div>
       <button class="btn-ghost" id="logout">Log out</button></div>
     <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${l}</button>`).join("")}</nav></div></header>
   <main class="wrap" id="main"></main>`;
@@ -982,13 +986,27 @@ const CHANNEL_DEFS = {
     tip: "A few STOPs are normal. Lots of them? You're messaging too often, or the offer was weak." },
 };
 function channelEntries(c, ch) { return (c.channels || []).filter(x => x.channel === ch); }
+const EXAMPLE_ROWS = {
+  cold: [[14, 7, 52, 21, 11, 4, 2, "Spaces this Saturday"], [11, 6, 38, 16, 7, 2, 1, "Spaces this Saturday"], [16, 8, 61, 24, 13, 5, 2, "Is your child stuck on the bench?"], [9, 5, 30, 12, 5, 1, 0, "Free trial, all abilities"]],
+  warm: [[25, 12, 14, 3, 4, 2], [18, 9, 9, 2, 2, 1], [30, 15, 17, 5, 5, 2], [12, 8, 6, 1, 1, 0]],
+  social: [[5, 18, 9, 3, 1, "Training clip: 1v1 finishing"], [4, 15, 6, 2, 1, "Parent testimonial"], [6, 21, 12, 4, 2, "Player of the week"], [3, 10, 4, 1, 0, "Spaces post"]],
+  referral: [[20, 3, 2, 1, 60], [12, 1, 1, 1, 60], [25, 4, 3, 2, 120], [8, 0, 0, 0, 0]],
+  reactivation: [["List: Reactivation List", "SMS", 220, 31, 9, 4, 6, 9.5], ["Ex-members", "Email", 85, 6, 2, 1, 1, 0], ["Reactivation List", "SMS", 190, 22, 6, 2, 4, 8.2]],
+};
+function exampleEntries(ch) {
+  const def = CHANNEL_DEFS[ch], rows = EXAMPLE_ROWS[ch];
+  if (def.mode === "week") return rows.map((r, i) => { const data = {}; def.fields.forEach(([k], j) => { if (r[j] !== undefined) data[k] = r[j]; }); return { channel: ch, key: iso(addDays(thisMonday(), -7 * i)), data, example: true }; });
+  return rows.map((r, i) => { const d = iso(addDays(new Date(), -9 * i - 3)); const data = { date: d, list: r[0].replace("List: ", ""), via: r[1], sent: r[2], replies: r[3], booked: r[4], joined: r[5], stops: r[6], cost: r[7] }; return { channel: ch, key: d + "-ex" + i, data, example: true }; });
+}
 function channelSum(entries, def) {
   const s = { n: entries.length };
   for (const [k, , , t] of def.fields) if (!t || t === "money") s[k] = entries.reduce((a, e) => a + n(e.data[k]), 0);
   return s;
 }
 function viewChannel(main, ch) {
-  const c = coachInView(), def = CHANNEL_DEFS[ch], all = channelEntries(c, ch);
+  const c = coachInView(), def = CHANNEL_DEFS[ch], real = channelEntries(c, ch);
+  const showExample = S.me.is_admin && !real.length;
+  const all = showExample ? exampleEntries(ch) : real;
   if (!S.chPeriod) S.chPeriod = "4w";
   const R = periodRange(S.chPeriod);
   const inPeriod = def.mode === "week" ? all.filter(e => e.key >= iso(R.from) && e.key <= iso(addDays(R.to, 7))) : all.filter(e => (e.data.date || e.key) >= iso(R.from));
@@ -998,6 +1016,7 @@ function viewChannel(main, ch) {
   ${all.length ? `<div class="health">${def.tiles(s).map(([l, v, f]) => bigTile(l, v, f)).join("")}</div>
   <div class="card key-stat"><span class="kpi-value">${K[1]}</span><div><b>${esc(K[0])}</b><p class="tiny">${esc(K[2])}</p></div></div>` : `<div class="card"><p class="muted small">Nothing logged yet. Add your first ${def.mode === "week" ? "week" : "blast"} below and your numbers appear here.</p></div>`}
   <p class="tiny">${esc(def.tip)}</p>`);
+  if (showExample) sec.insertBefore(el("div", "example-flag", `<b>Example numbers.</b> ${esc(firstName(c))} hasn't logged any ${def.name.toLowerCase()} yet, so this shows made-up numbers to preview the layout. Only you see this; coaches see their own numbers or an empty tracker.`), sec.children[1]);
   main.appendChild(sec);
   sec.querySelector("#ch-period").addEventListener("change", e => { S.chPeriod = e.target.value; render(); });
 
