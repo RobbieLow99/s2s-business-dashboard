@@ -1261,6 +1261,7 @@ function leaveRisk(M) {
   if (seen === null) out.push({ w: 1, t: "Never opened their dashboard" }); else if (seen > 14) out.push({ w: 2, t: `Dashboard not opened in ${Math.round(seen)} days` });
   const circ = daysSince(c.circle_last_seen);
   if (c.circle_status === "ok" && circ !== null && circ > 14) out.push({ w: 2, t: `Not on Circle in ${Math.round(circ)} days` });
+  else if (c.circle_status === "ok" && circ !== null && circ > 7) out.push({ w: 1, t: `Not on Circle in ${Math.round(circ)} days` });
   if (c.circle_status === "not found in Circle") out.push({ w: 1, t: "Not found in Circle" });
   const spendWeeks = (M.c.weeks || []).filter(w => has(w.ad_spend) && w.week_start >= iso(addDays(lastMonday(), -21))).length;
   if (spendWeeks === 0) out.push({ w: 1, t: "No ad spend entered in 4 weeks" });
