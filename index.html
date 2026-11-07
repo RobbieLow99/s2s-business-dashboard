@@ -186,6 +186,19 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
 .speed-strip { display: grid; grid-template-columns: minmax(150px, 1.1fr) repeat(4, 1fr); gap: 1px; padding: 0; overflow: hidden; background: var(--line); margin-bottom: 14px; }
 .speed-strip > div:first-child { background: var(--panel); padding: 12px 14px; display: grid; align-content: center; gap: 2px; }
 @media (max-width: 760px) { .speed-strip { grid-template-columns: 1fr 1fr; } .speed-strip > div:first-child { grid-column: 1 / -1; } }
+
+.building { display: grid; gap: 10px; border-color: rgba(140,82,255,.45); }
+.build-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.build-steps > div { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); font-size: 13px; color: var(--fg-2); }
+.build-steps > div b { color: var(--fg); }
+.build-steps > div.done { border-color: rgba(43,196,138,.45); }
+.build-steps > div.done b::before { content: "✓ "; color: var(--good); }
+.boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.board ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.board li { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+.board .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--bg-2); color: var(--fg-2); }
+.rank.r1 { background: #F2B33D; color: #2a1d00; } .rank.r2 { background: #C9D3E0; color: #111; } .rank.r3 { background: #C98B5A; color: #1d0f04; }
 .stats.c2 { grid-template-columns: 1fr 1fr; }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 16px; }
 .two > .card { align-content: start; }
@@ -416,6 +429,13 @@ function issues(c) {
   const R = periodRange("4w"), D = derive(sumWeeks(inRange(rows, R.from, R.to), c), c);
   const out = [], fn = firstName(c);
   if (c.sync_error) out.push({ sev: "bad", key: "sync", title: "CRM connection needs fixing", body: c.sync_error, msg: null });
+  if (synced(c) && Array.isArray(info.calendars)) {
+    const kinds = new Set(info.calendars.map(x => x.kind));
+    const missing = [];
+    if (c.flow !== "nocall" && !kinds.has("call")) missing.push("Discovery Calls");
+    if (!kinds.has("trial")) missing.push("Trial Session");
+    if (missing.length) out.push({ sev: "bad", key: "calendars", title: `Can't find your ${missing.join(" or ")} calendar`, body: `Your calls and trials are counted from calendars with "Discovery" or "Trial" in the name. Has it been renamed? Until it's renamed back, those numbers will show as zero. Your calendars: ${info.calendars.map(x => x.name).join(", ") || "none"}.`, msg: `${fn}, your dashboard can't find your ${missing.join(" or ")} calendar, so your ${missing.length > 1 ? "calls and trials" : missing[0] === "Trial Session" ? "trials" : "calls"} are showing as zero. Has it been renamed? Put "${missing[0] === "Trial Session" ? "Trial" : "Discovery"}" back in the name and it'll pick up again tonight.` });
+  }
   if (info.missed_calls_14d > 0) out.push({ sev: info.missed_calls_14d >= 3 ? "bad" : "ok", key: "missed", title: `${info.missed_calls_14d} parent call${info.missed_calls_14d > 1 ? "s" : ""} to your business number went unanswered`, body: "Last 14 days. These are people ready to buy. Turn on app notifications and ring them back the same day.", msg: `${fn}, ${info.missed_calls_14d} parent${info.missed_calls_14d > 1 ? "s" : ""} rang your business number in the last fortnight and nobody picked up. That's people ready to buy. Get the app notifications on and call them back today.` });
   if (info.calls_tracked && info.leads_14d >= 3 && n(info.uncalled_leads_14d) / info.leads_14d >= 0.5) out.push({ sev: "bad", key: "uncalled", title: `${info.uncalled_leads_14d} of ${info.leads_14d} new leads haven't been called from the CRM`, body: "Last 14 days. Call from the HighLevel app the minute the alert lands. Calls from your own phone can't be seen, so they count as not called.", msg: `${fn}, ${info.uncalled_leads_14d} of your ${info.leads_14d} leads in the last 2 weeks didn't get a call from the CRM. Call them from the HighLevel app the second the alert comes in. It's the cheapest win in your business.` });
   const unm = n(info.unmarked_calls) + n(info.unmarked_trials);
@@ -585,6 +605,20 @@ function viewDash(main) {
       try { S.me = await rpc("kpi_save_week", { p_code: S.code, p_week: iso(lastMonday()), p_data: { ad_spend: v } }); toast("Saved. That's your Monday done."); render(); }
       catch (er) { toast("Didn't save. Check your connection and try again.", true); }
     });
+  }
+
+  // 0. still building?
+  const liveWeeks = rows.filter(w => n(w.leads) || n(w.new_clients) || n(w.trials_booked) || n(w.calls_booked)).length;
+  const realMonths = M.months.filter(m => n(m.members) || n(m.revenue)).length;
+  if (liveWeeks < 4 || realMonths < 2) {
+    main.appendChild(el("section", "card building", `<span class="eyebrow">Your dashboard is still building</span>
+      <h3>${liveWeeks} week${liveWeeks === 1 ? "" : "s"} of numbers so far. Here's what fills in when</h3>
+      <div class="build-steps">
+        <div class="${M.members !== null ? "done" : ""}"><b>Now</b><span>Paying members, monthly revenue and this week's priority</span></div>
+        <div class="${liveWeeks >= 4 ? "done" : ""}"><b>After 4 weeks</b><span>Your funnel and conversion rates (before that, a couple of leads swing the %s wildly)</span></div>
+        <div class="${realMonths >= 2 ? "done" : ""}"><b>After your first full month</b><span>Growth vs churn, month-on-month changes and lifetime value</span></div>
+        <div class="${M.s12.spend_weeks ? "done" : ""}"><b>Once you enter ad spend</b><span>Cost per lead, cost to acquire a client and return on ad spend</span></div>
+      </div>`));
   }
 
   // 1. verdict
@@ -1029,8 +1063,8 @@ function viewAdmin(main) {
 
   const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Monday review · ${new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</span><h1 class="admin-h">${greeting(S.me)}</h1></div><button class="btn-ghost" id="refresh">Refresh</button></div>
   <div class="health">
-    ${bigTile("Paying members, all coaches", fmt(totM, "int"), `${fmt(totPrev, "int")} at the end of ${monthShort(prevMonthKey())}`, spark(phT.map(m => m.members)), "none", delta(totM, totPrev, "high"))}
-    ${bigTile("Coach revenue this month", fmt(sum(x => x.nowM?.revenue), "gbp0"), `${fmt(sum(x => x.prevM?.revenue), "gbp0")} last month`, spark(phT.map(m => m.revenue)))}
+    ${bigTile("Paying members, all coaches", fmt(totM, "int"), `${fmt(totPrev, "int")} at the end of ${monthShort(prevMonthKey())}`, spark(phT.map(m => m.members)), "none", pctDelta(totM, totPrev, ""))}
+    ${bigTile("Coaches' MRR, combined", fmt(sum(x => x.mrr), "gbp0"), `${fmt(sum(x => x.nowM?.revenue), "gbp0")} taken so far this month`, spark(phT.map(m => m.revenue)), "none", pctDelta(sum(x => x.mrr), sum(x => x.prevM ? n(x.prevM.a?.mrr) : null), "£"))}
     ${bigTile("Need you now", fmt(list.filter(x => x.flags).length, "int"), `of ${list.length} coaches have a red flag`, "", list.some(x => x.flags) ? "bad" : "good")}
     ${bigTile("At risk of leaving you", fmt(atRisk.length, "int"), atRisk.length ? atRisk.map(x => esc(x.c.business || x.c.name)).slice(0, 2).join(", ") + (atRisk.length > 2 ? "…" : "") : "nobody right now", "", atRisk.length ? "bad" : "good")}
   </div>`);
@@ -1064,7 +1098,21 @@ function viewAdmin(main) {
   main.appendChild(ws);
   ws.querySelectorAll(".copy-win").forEach(b => b.addEventListener("click", ev => copy(allWins[+b.dataset.i].line, ev.target)));
 
-  // 4. every coach
+
+  // 4. leaderboard
+  const ranked = (f, filt) => list.filter(filt).map(x => ({ x, v: f(x) })).filter(r => r.v !== null && isFinite(r.v)).sort((a, b) => b.v - a.v).slice(0, 10);
+  const roasL = ranked(x => x.D12.lt_roas, x => x.s12.spend_weeks > 0 && x.s12.new_clients > 0);
+  const clientsL = ranked(x => x.nowM ? x.nowM.joined : null, x => true);
+  const growthL = ranked(x => x.members !== null && x.membersPrev !== null ? x.members - x.membersPrev : null, x => true);
+  const board = (title, sub, rowsL, fmtV) => `<div class="card board"><h3>${title}</h3><p class="tiny">${sub}</p>${rowsL.length ? `<ol>${rowsL.map((r, i) => `<li><span class="rank r${i + 1}">${i + 1}</span><span class="who">${esc(r.x.c.business || r.x.c.name)}</span><b>${fmtV(r.v)}</b></li>`).join("")}</ol>` : `<p class="muted small">Nobody yet.</p>`}</div>`;
+  main.appendChild(el("section", "section", `<div class="section-head"><div><span class="eyebrow">4 · Leaderboard</span><h2>Your top coaches</h2><p class="tiny">Where your case studies come from.</p></div></div>
+  <div class="boards">
+    ${board("Return on ad spend", "Lifetime, last 3 months. Needs ad spend entered.", roasL, v => v.toFixed(1) + "x")}
+    ${board(`New members in ${monthShort(monthKey(new Date()))}`, "Joined so far this month", clientsL, v => "+" + v)}
+    ${board("Member growth this month", "Net change since the end of last month", growthL, v => (v > 0 ? "+" : "") + v)}
+  </div>`));
+
+  // 5. every coach
   if (!list.length) return;
   const sorted = [...list].sort((a, b) => b.flags - a.flags || b.risk.score - a.risk.score || n(b.members) - n(a.members));
   const cell = (x, k, v) => `<td class="c-${rag(k, v, x.T)}">${fmt(v, k === "cost_per_client" ? "gbp0" : x.T[k].fmt)}</td>`;
