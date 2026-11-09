@@ -173,14 +173,15 @@ input[type="number"] { font-variant-numeric: tabular-nums; }
 .meta-card { display: grid; gap: 8px; border-style: dashed; }
 .ticks { margin: 0; padding-left: 18px; color: var(--fg-2); font-size: 14px; display: grid; gap: 4px; }
 main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
-.channel-tabs { margin-top: -10px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.channel-tabs { margin-top: -10px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .channel-tabs .subtab { text-align: center; padding: 10px 6px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 760px) { .channel-tabs { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .channel-tabs { grid-template-columns: repeat(3, 1fr); } .channel-tabs .subtab[data-ch="all"] { grid-column: 1 / -1; } }
 .preview { opacity: .85; }
 .soon { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); border: 1px solid var(--line); border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
 
 .churn-line { font-size: 13px !important; color: var(--fg-2) !important; margin-top: 2px; }
 .churn-line.down { color: #FF9AA8 !important; }
+.since-sub { font-size: 12px; font-weight: 700; color: var(--fg-2); } .since-sub.down { color: #FF9AA8; } .since-sub.up { color: #7BE3B9; }
 .next-up > summary { font-size: 13px; color: var(--fg-2); margin-top: 6px; }
 .next-up[open] > summary { margin-bottom: 10px; }
 .speed-strip { display: grid; grid-template-columns: minmax(150px, 1.1fr) repeat(4, 1fr); gap: 1px; padding: 0; overflow: hidden; background: var(--line); margin-bottom: 14px; }
@@ -234,7 +235,7 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
   .channel-tabs .soon { display: none; }
   .grid-form { grid-template-columns: 1fr 1fr; gap: 12px; }
   .grid-form label small { display: none; }
-  .channel-tabs .subtab[data-ch]:not([data-ch="paid"]) { opacity: .7; }
+  .channel-tabs .subtab[data-ch]:not([data-ch="paid"]):not([data-ch="all"]) { opacity: .7; }
 }
 .detail-box, #detail { min-width: 0; }
 .speed-strip > .stat { min-width: 0; }
@@ -246,6 +247,18 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
 .brand-text b.biz-name { font-size: 19px !important; font-weight: 800; letter-spacing: -.01em !important; line-height: 1.2; }
 .example-flag { padding: 10px 14px; border-radius: 10px; border: 1px dashed rgba(242,179,61,.6); background: rgba(242,179,61,.08); color: var(--fg-2); font-size: 13px; }
 .example-flag b { color: var(--ok); }
+.l-total td { font-weight: 700; border-top: 1px solid var(--line); }
+.bad-t { color: var(--bad); } .card.owed { border-color: rgba(240,86,106,.5); padding: 12px 16px; }
+td .btn-ghost { padding: 5px 10px; font-size: 12px; }
+@media (max-width: 640px) {
+  .list-table { display: block; min-width: 0; width: 100%; } .list-table thead { display: none; } .list-table tbody { display: block; }
+  .list-table tr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .list-table tr:last-child { border-bottom: 0; }
+  .list-table td { display: block; padding: 0; border: 0; text-align: left; white-space: normal; }
+  .list-table .l-name { flex: 1 1 55%; font-weight: 600; } .list-table .l-status { flex: none; }
+  .list-table .l-stat { order: 3; font-size: 13px; color: var(--fg-2); } .list-table .l-stat::before { content: attr(data-l) ": "; color: var(--fg-3); }
+  .list-table .l-act { order: 4; flex: 1 1 100%; display: flex; gap: 8px; }
+}
 @media (max-width: 600px) { .brand-text b.biz-name { font-size: 16px !important; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; } .brand-text .brand-kicker { font-size: 9px; } }
 .since-line { margin-top: 8px; font-size: 13px !important; color: var(--fg-2) !important; }
 .since-line b { color: var(--fg); }
@@ -258,9 +271,9 @@ main > .divided { border-top: 1px solid var(--line); padding-top: 26px; }
 .brand-text b.biz-name { font-size: 22px !important; }
 .tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
 .tab { text-align: center; }
-.since { display: grid; grid-template-columns: auto repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-.since > * { background: var(--panel); padding: 12px 16px; }
-.since .since-when { display: flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-2); }
+.since { display: grid; grid-template-columns: 150px repeat(5, minmax(0, 1fr)); gap: 1px; background: rgba(140,82,255,.35); border: 1px solid rgba(140,82,255,.45); border-radius: 14px; overflow: hidden; }
+.since > * { background: linear-gradient(135deg, rgba(140,82,255,.2), rgba(140,82,255,.05)), var(--panel); padding: 12px 16px; }
+.since .since-when { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-deep)); }
 .since div { display: grid; gap: 2px; }
 .since b { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; } .since b.down { color: var(--bad); }
 .since div span { font-size: 12px; color: var(--fg-2); font-weight: 600; }
@@ -349,6 +362,97 @@ details.more[open] > summary { margin-bottom: 14px; }
   .monday form { width: 100%; } .monday input { flex: 1; width: auto; }
 }
 @media (prefers-reduced-motion: no-preference) { .f-bar { transition: width .5s ease; } }
+/* round 9, 8 Nov */
+.verdict { align-items: stretch; }
+.v-main { flex: 1 1 100%; display: grid; gap: 16px; justify-items: center; text-align: center; }
+.verdict h1 { font-size: clamp(22px, 3vw, 30px) !important; margin: 0 !important; }
+.v-figs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 16px; margin-top: 0; width: 100%; justify-items: center; text-align: center; }
+.v-figs b { font-size: clamp(34px, 5vw, 52px); }
+.verdict > .tiny { flex: 1 1 100%; text-align: center; }
+.verdict, .verdict.up, .verdict.down, .verdict.flat { background: none; border: 0; padding: 4px 0 0; }
+.v-figs { gap: 12px; }
+.v-figs { grid-template-columns: repeat(4, 1fr); grid-auto-flow: row; align-items: stretch; }
+.v-figs > div { width: 100%; display: grid; align-content: start; justify-items: center; gap: 4px; padding: 18px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--panel); }
+.v-figs > div.up { border-color: rgba(43,196,138,.45); background: linear-gradient(135deg, rgba(43,196,138,.18), rgba(43,196,138,.03)); }
+.v-figs > div.down { border-color: rgba(240,86,106,.45); background: linear-gradient(135deg, rgba(240,86,106,.18), rgba(240,86,106,.03)); }
+.v-figs b { font-size: clamp(28px, 3.2vw, 38px); color: var(--fg); }
+.v-l { font-size: 13px; font-weight: 600; color: var(--fg-2); }
+.v-figs em { font-style: normal; font-size: 13px; font-weight: 700; color: var(--fg-2); }
+.v-figs > div.up em { color: #7BE3B9; } .v-figs > div.down em { color: #FF9AA8; }
+.v-figs small { font-size: 11px; color: var(--fg-3); line-height: 1.35; }
+.brand-text b.biz-name { font-size: 30px !important; }
+.brand-text .brand-kicker { font-size: 13px; }
+.page-hello { text-align: center; } .page-hello h1 { font-size: clamp(22px, 3vw, 30px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+h2:has(+ .lead-sub) { font-size: 24px; }
+.lead-sub { font-size: 14px; color: var(--fg-2); }
+.filter-row.centre { text-align: center; margin: 0 0 14px; }
+.since > div { text-align: center; justify-items: center; } .since-when { text-align: center; }
+.speed-strip { border: 1px solid rgba(140,82,255,.6); box-shadow: 0 8px 26px rgba(140,82,255,.14); margin-bottom: 18px; }
+.speed-strip > div:first-child { background: linear-gradient(135deg, rgba(140,82,255,.34), rgba(140,82,255,.14)), var(--panel); }
+.speed-strip .eyebrow { color: #fff; }
+.card + .speed-strip { margin-top: 18px; margin-bottom: 0; }
+main > .filter-row.centre:first-child { margin: 8px 0 0; } /* same gap above and below the page filter */
+main > .live-note { margin-bottom: -14px; }
+html, body, *, *::before, *::after, svg text { font-family: var(--font) !important; }
+.refresh-btn { appearance: none; cursor: pointer; margin-left: 8px; padding: 3px 10px; font-size: 11px; font-weight: 700; color: var(--accent-2); background: rgba(140,82,255,.12); border: 1px solid rgba(140,82,255,.45); border-radius: 999px; }
+.refresh-btn:disabled { opacity: .6; cursor: default; }
+.clear-prog { display: grid; gap: 8px; margin: 0 0 14px; padding: 14px 16px; border: 1px solid rgba(43,196,138,.35); border-radius: 14px; background: linear-gradient(135deg, rgba(43,196,138,.12), rgba(43,196,138,.02)), var(--panel); }
+.clear-top { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; }
+.clear-top span:last-child { color: #7BE3B9; white-space: nowrap; }
+.clear-track { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.clear-bar { height: 100%; min-width: 2px; border-radius: 999px; background: var(--good); }
+.clear-note { font-size: 12px; color: var(--fg-2); }
+.ret-note { margin-top: 8px; text-align: center; }
+.since.ret-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ret-strip small { font-size: 11px; font-weight: 500; color: var(--fg-3); }
+.cancels-card, .cancels-card th, .cancels-card td { text-align: center !important; }
+.cancels-card .section-head { justify-content: center; }
+.weeks-more { margin-top: 10px; text-align: center; }
+.cmp-bar.gold { background: var(--ok); } .cmp-you.gold { color: var(--ok); }
+@media (max-width: 600px) {
+  .ret-strip b { font-size: 16px; white-space: nowrap; } .ret-strip > div { padding: 10px 4px; }
+  .cancels-card th, .cancels-card td { padding: 8px 3px; font-size: 11px; }
+  .growth-card svg text { font-size: 16px !important; } .m-word { display: none; }
+}
+.growth-card { border-color: rgba(140,82,255,.45) !important; background: linear-gradient(135deg, rgba(140,82,255,.2), rgba(140,82,255,.05)), var(--panel) !important; }
+.target-line { margin-top: 10px; text-align: center; }
+.funnel { gap: 14px; }
+.card:has(> .funnel) { padding: 24px; }
+.leak-note { margin-top: 24px; padding: 14px 16px; line-height: 1.5; }
+@media (min-width: 761px) { .funnel { gap: 18px; } .funnel .f-row { grid-template-columns: minmax(170px, 220px) 1fr 64px 165px !important; gap: 18px; } .funnel .f-rate { text-align: right; } }
+@media (max-width: 640px) { .v-figs { grid-template-columns: 1fr 1fr; gap: 8px; } .v-figs > div { padding: 14px 8px; } .v-figs b { font-size: 26px; } .v-l { font-size: 12px; } .v-figs span { font-size: 11px; } .brand-text b.biz-name { font-size: 20px !important; } .brand-text .brand-kicker { font-size: 10px; } .card:has(> .funnel) { padding: 16px; } }
+
+
+.live-note { text-align: center; }
+/* priorities use the full width on desktop: text left, CRM button right */
+.hero-fix h2, .hero-fix p { max-width: none; text-wrap: pretty; }
+@media (min-width: 761px) {
+  .hero-fix, .hero-fix.small { padding: 12px 18px; align-items: center; }
+  .hero-fix > div { grid-template-columns: 1fr auto; column-gap: 20px; row-gap: 2px; align-items: center; }
+  .hero-fix > div > h2, .hero-fix > div > p { grid-column: 1; }
+  .hero-fix > div > .crm-link { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; white-space: nowrap; width: 210px; box-sizing: border-box; text-align: center; }
+  .hero-fix h2 { font-size: 17px; }
+}
+/* simplified phone view */
+@media (max-width: 600px) {
+  .seg, .section-head > .seg { display: grid !important; grid-template-columns: repeat(5, 1fr); width: 100%; padding: 2px; gap: 0; border-radius: 12px; }
+  .seg button { padding: 7px 0; font-size: 11px; border-radius: 10px; letter-spacing: -.01em; }
+  .filter-row, .filter-row.centre { margin-bottom: 10px; }
+  .lead-sub { display: none; }
+  .since { display: flex; flex-wrap: wrap; }
+  .since > div { flex: 1 1 30%; padding: 8px 6px; }
+  .since .since-when { flex: 1 1 100%; justify-content: center; padding: 7px 12px; font-size: 10px; }
+  .since b { font-size: 18px; }
+  .since div span { font-size: 11px; }
+  .prio-list { gap: 8px; }
+  .hero-fix, .hero-fix.small { padding: 12px 14px; gap: 10px; border-radius: 12px; }
+  .hero-fix > div { gap: 4px; }
+  .hero-fix h2, .hero-fix.small h2 { font-size: 15px !important; line-height: 1.25; }
+  .hero-fix p { font-size: 13px; }
+  .hero-fix.small p { display: none; }
+  .prio-n { width: 22px; height: 22px; font-size: 12px; }
+  .crm-link { margin-top: 2px; padding: 0; background: none; border: 0; font-size: 13px; color: var(--accent-2); }
+}
 </style>
 </head>
 <body>
@@ -359,7 +463,7 @@ const SUPABASE_KEY = "sb_publishable_6JR7nE988n8fPe5SFbtyeA_sIoR3E8X";
 
 /* targets: starting points, editable per coach in Settings */
 const METRICS = {
-  called_5min:     { label: "Leads called within 5 min", fmt: "pct", dir: "high", good: 80, ok: 50 },
+  called_5min:     { label: "Leads called within 5 min", fmt: "pct", dir: "high", good: 80, ok: 50, flow: "call" },
   call_book_rate:  { label: "Lead → call booked",     fmt: "pct", dir: "high", good: 40, ok: 25, flow: "call" },
   call_show_rate:  { label: "Call show rate",         fmt: "pct", dir: "high", good: 70, ok: 55, flow: "call" },
   call_to_trial:   { label: "Call → trial booked",    fmt: "pct", dir: "high", good: 60, ok: 40, flow: "call" },
@@ -376,15 +480,15 @@ const METRICS = {
 };
 const ADVICE = {
   called_5min: "Leads go cold fast. Call from the HighLevel app the minute the alert lands. Calls from your own phone don't count here.",
-  call_book_rate: "Leads aren't booking calls. Speed to lead: call within 5 minutes, and make sure the booking link is in the first text.",
-  call_show_rate: "People book calls and don't turn up. Text them yourself on the morning of the call.",
-  call_to_trial: "Calls aren't turning into trials. Find the pain, make the trial the obvious next step, and book it while you're on the call.",
-  hold_rate: "Leads aren't getting a trial spot held. Hold a spot for every request within 24 hours.",
-  confirm_rate: "Parents aren't replying YES. Check the price text is going out and follow up by hand after 24 hours.",
-  show_rate: "Trials aren't turning up. Call every booking the day before. A no-show is a lead you've already paid for.",
-  trial_to_client: "Trials aren't converting. Feedback to every parent after the session, onboarding links the same day, and ask for the sale.",
-  cpl: "Leads are costing too much. Test two new hooks or creatives before you touch the budget.",
-  cost_per_client: "Every new client is costing too much. Fix the red step in the funnel first. That's cheaper than more ad spend.",
+  call_book_rate: "Call within 5 minutes and put the booking link in the first text.",
+  call_show_rate: "Text them yourself on the morning of the call.",
+  call_to_trial: "Find the pain and book the trial while you're on the call.",
+  hold_rate: "Hold a spot for every request within 24 hours.",
+  confirm_rate: "Check the price text is going out and follow up by hand after 24 hours.",
+  show_rate: "Call every booking the day before.",
+  trial_to_client: "Give every parent feedback, send onboarding links the same day and ask for the sale.",
+  cpl: "Test two new hooks or creatives before you touch the budget.",
+  cost_per_client: "Fix the red step in the funnel before you spend more on ads.",
   fm_roas: "The first month isn't paying back the ad spend. Fine if clients stay. Check lifetime ROAS.",
   lt_roas: "Over a client's lifetime you're not making enough back on ads. Fix the funnel or look at your price.",
   churn: "Members are leaving too fast. Every one you lose costs a new lead to replace. Check in with every family monthly.",
@@ -420,7 +524,13 @@ const monthShort = s => parseISO(s).toLocaleDateString("en-GB", { month: "short"
 const monthKey = d => iso(new Date(d.getFullYear(), d.getMonth(), 1));
 const prevMonthKey = () => { const d = new Date(); return iso(new Date(d.getFullYear(), d.getMonth() - 1, 1)); };
 const firstName = c => (c.name || c.business || "").split(" ")[0] || "Coach";
-function ago(ts) { if (!ts) return "never"; const m = (Date.now() - new Date(ts)) / 60000; return m < 60 ? Math.max(1, Math.round(m)) + " min ago" : m < 1440 ? Math.round(m / 60) + " hrs ago" : Math.round(m / 1440) + " days ago"; }
+/* booking flow over time: a switch counts from the Monday of the week it happened */
+const mondayISO = s => { const d = parseISO(s); return iso(addDays(d, -((d.getDay() + 6) % 7))); };
+const lastFlowChange = c => { const h = c.flow_history || []; return h.length ? h[h.length - 1] : null; };
+function flowInWeek(c, wk) { const h = c.flow_history || []; if (!h.length) return c.flow; let f = h[0].from; for (const x of h) { if (wk >= mondayISO(x.at)) f = x.to; else break; } return f; }
+const flowName = f => f === "nocall" ? "no-call" : "call";
+const shortDate = s => parseISO(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+function ago(ts) { if (!ts) return "never"; const m = (Date.now() - new Date(ts)) / 60000; return m < 60 ? Math.max(1, Math.round(m)) + " min ago" : m < 1440 ? Math.round(m / 60) + (Math.round(m / 60) === 1 ? " hr ago" : " hrs ago") : Math.round(m / 1440) + (Math.round(m / 1440) === 1 ? " day ago" : " days ago"); }
 
 function targetsFor(c) {
   const t = {};
@@ -449,11 +559,12 @@ function weekRows(c) {
   return [...map.values()].sort((a, b) => a.week_start < b.week_start ? -1 : 1);
 }
 function sumWeeks(rows, c) {
-  const s = { weeks: rows.length, ad_spend: 0, spend_weeks: 0, leads: 0, calls_booked: 0, calls_attended: 0, trials_held: 0, trials_booked: 0, trials_attended: 0, new_clients: 0, cancellations: 0, first_month: 0, leads_called: 0, called_5min: 0, missed_calls: 0 };
+  const s = { weeks: rows.length, ad_spend: 0, spend_weeks: 0, leads: 0, calls_booked: 0, calls_attended: 0, trials_held: 0, trials_booked: 0, trials_attended: 0, new_clients: 0, cancellations: 0, first_month: 0, leads_called: 0, called_5min: 0, missed_calls: 0, funnel_clients: 0 };
   for (const w of rows) {
     for (const k of ["leads", "calls_booked", "calls_attended", "trials_held", "trials_booked", "trials_attended", "new_clients", "cancellations", "leads_called", "called_5min", "missed_calls"]) s[k] += n(w[k]);
     if (has(w.ad_spend)) { s.ad_spend += n(w.ad_spend); s.spend_weeks++; }
     s.first_month += n(w.new_fees) > 0 ? n(w.new_fees) : n(w.new_clients) * n(c.avg_fee);
+    s.funnel_clients += has(w.funnel_clients) ? n(w.funnel_clients) : n(w.new_clients); // joined after a lead card or booking; weeks without it fall back to all joins
   }
   return s;
 }
@@ -463,7 +574,7 @@ function derive(s, c) {
     called_5min: c.sync_info?.calls_tracked ? pct(s.called_5min, s.leads) : null,
     call_book_rate: pct(s.calls_booked, s.leads), call_show_rate: pct(s.calls_attended, s.calls_booked), call_to_trial: pct(s.trials_booked, s.calls_attended),
     hold_rate: pct(s.trials_held, s.leads), confirm_rate: pct(s.trials_booked, s.trials_held),
-    show_rate: pct(s.trials_attended, s.trials_booked), trial_to_client: pct(s.new_clients, s.trials_attended),
+    show_rate: pct(s.trials_attended, s.trials_booked), trial_to_client: pct(s.funnel_clients ?? s.new_clients, s.trials_attended),
     cpl: spend === null ? null : div(spend, s.leads), cost_per_client: spend === null ? null : div(spend, s.new_clients),
     fm_roas: spend === null ? null : div(s.first_month, spend), lt_roas: spend === null ? null : div(s.new_clients * retention(c).ltv, spend),
   };
@@ -487,11 +598,27 @@ function retention(c) {
 }
 function periodRange(p) {
   const lm = lastMonday();
-  const weeks = { "4w": 4, "12w": 12, "13w": 13, "26w": 26 }[p];
-  if (weeks) { const from = addDays(lm, -7 * (weeks - 1)); return { from, to: lm, prevFrom: addDays(from, -7 * weeks), prevTo: addDays(from, -7), label: weeks === 13 ? "last 3 months" : weeks === 26 ? "last 6 months" : `last ${weeks} weeks` }; }
-  return { from: thisMonday(), to: thisMonday(), label: "this week so far" };
+  const weeks = { "4w": 4, "12w": 12, "13w": 13, "26w": 26, "52w": 52 }[p];
+  if (weeks) { const from = addDays(lm, -7 * (weeks - 1)); return { from, to: lm, prevFrom: addDays(from, -7 * weeks), prevTo: addDays(from, -7), label: weeks === 13 ? "last 3 months" : weeks === 26 ? "last 6 months" : weeks === 52 ? "last 12 months" : weeks === 4 ? "last 28 days" : `last ${weeks} weeks`, is28: weeks === 4 }; }
+  return { is7: true, from: thisMonday(), to: thisMonday(), label: "last 7 days" };
 }
 const inRange = (rows, a, b) => rows.filter(w => w.week_start >= iso(a) && w.week_start <= iso(b));
+// ad spend is entered once a week, so "7 days" uses the latest week that has a figure
+const latestSpend = rows => [iso(thisMonday()), iso(lastMonday())].map(k => rows.find(w => w.week_start === k)?.ad_spend).find(v => has(v));
+// ad spend over a run of weeks (null if none entered); a = oldest week, b = newest, both as weeks back from this Monday
+function spendOver(rows, a, b) {
+  const ws = inRange(rows, addDays(thisMonday(), -7 * a), addDays(thisMonday(), -7 * b)).filter(w => has(w.ad_spend));
+  return ws.length ? ws.reduce((t, w) => t + n(w.ad_spend), 0) : null;
+}
+// rolling last N days from the CRM's daily counts (null until a sync has written enough days)
+function lastDaysRows(rows, c, days) {
+  const dw = c.sync_info?.daily_w; if (!dw || (days > 14 && n(c.sync_info?.daily_w_days) < 56)) return null;
+  const r = { fees_left: 0, revenue: 0, new_fees: 0 };
+  for (let i = 0; i < days; i++) for (const [k, v] of Object.entries(dw[iso(addDays(new Date(), -i))] || {})) r[k] = (r[k] || 0) + n(v);
+  const spend = days === 7 ? latestSpend(rows) : spendOver(rows, 3, 0);
+  return [has(spend) ? { ...r, ad_spend: spend } : r];
+}
+const last7Rows = (rows, c) => lastDaysRows(rows, c, 7);
 
 function monthRows(c) {
   const crm = new Map((c.crm_months || []).map(m => [m.month, m]));
@@ -518,8 +645,13 @@ function monthRows(c) {
 /* ---- issues: what to fix, most urgent first ---- */
 function issues(c) {
   const T = targetsFor(c), info = c.sync_info || {}, rows = weekRows(c);
-  const R = periodRange("4w"), D = derive(sumWeeks(inRange(rows, R.from, R.to), c), c);
+  const fc = lastFlowChange(c), fm = fc ? mondayISO(fc.at) : null;
+  const R = periodRange("4w"), s4w = sumWeeks(inRange(rows, fm && fm > iso(R.from) ? parseISO(fm) : R.from, R.to), c), D = derive(s4w, c);
   const out = [], fn = firstName(c);
+  // what a lead or an under-target rate is worth, for ranking by money at stake
+  const R13 = periodRange("13w"), s13 = sumWeeks(inRange(rows, R13.from, R13.to), c), ltv = n(retention(c).ltv), fee = n(retention(c).fee);
+  const conv = s13.leads >= 10 ? Math.min(1, s13.funnel_clients / s13.leads) : 0.1, trialConv = s13.trials_attended >= 5 ? Math.min(1, s13.funnel_clients / s13.trials_attended) : 0.5;
+  const rateWorth = k => { const v = D[k], m = T[k]; if (!m || rag(k, v, T) !== "bad") return 0; if (m.dir === "low") return n(s4w.ad_spend) * (1 - m.good / v); return Math.max(1, s4w.funnel_clients) * ltv * (v > 0 ? m.good / v - 1 : 3); };
   if (c.sync_error) out.push({ sev: "bad", key: "sync", title: "CRM connection needs fixing", body: c.sync_error, msg: null });
   if (synced(c) && Array.isArray(info.calendars)) {
     const kinds = new Set(info.calendars.map(x => x.kind));
@@ -528,13 +660,22 @@ function issues(c) {
     if (!kinds.has("trial")) missing.push("Trial Session");
     if (missing.length) out.push({ sev: "bad", key: "calendars", title: `Can't find your ${missing.join(" or ")} calendar`, body: `Your calls and trials are counted from calendars with "Discovery" or "Trial" in the name. Has it been renamed? Until it's renamed back, those numbers will show as zero. Your calendars: ${info.calendars.map(x => x.name).join(", ") || "none"}.`, msg: `${fn}, your dashboard can't find your ${missing.join(" or ")} calendar, so your ${missing.length > 1 ? "calls and trials" : missing[0] === "Trial Session" ? "trials" : "calls"} are showing as zero. Has it been renamed? Put "${missing[0] === "Trial Session" ? "Trial" : "Discovery"}" back in the name and it'll pick up again tonight.` });
   }
-  if (info.missed_calls_14d > 0) out.push({ sev: info.missed_calls_14d >= 3 ? "bad" : "ok", key: "missed", title: `${info.missed_calls_14d} parent call${info.missed_calls_14d > 1 ? "s" : ""} to your business number went unanswered`, body: "Last 14 days. These are people ready to buy. Turn on app notifications and ring them back the same day.", msg: `${fn}, ${info.missed_calls_14d} parent${info.missed_calls_14d > 1 ? "s" : ""} rang your business number in the last fortnight and nobody picked up. That's people ready to buy. Get the app notifications on and call them back today.` });
-  if (info.calls_tracked && info.leads_14d >= 3 && n(info.uncalled_leads_14d) / info.leads_14d >= 0.5) out.push({ sev: "bad", key: "uncalled", title: `${info.uncalled_leads_14d} of ${info.leads_14d} new leads haven't been called from the CRM`, body: "Last 14 days. Call from the HighLevel app the minute the alert lands. Calls from your own phone can't be seen, so they count as not called.", msg: `${fn}, ${info.uncalled_leads_14d} of your ${info.leads_14d} leads in the last 2 weeks didn't get a call from the CRM. Call them from the HighLevel app the second the alert comes in. It's the cheapest win in your business.` });
+  const since14 = iso(addDays(new Date(), -13));
+  const sum14 = (src, k, after) => Object.entries(src || {}).reduce((a, [d, x]) => a + (d >= since14 && (!after || d > after) ? n(x[k]) : 0), 0);
+  const callsAfter = sum14(info.daily, "calls_booked", fc?.at), settled = !fc || fc.at <= iso(addDays(new Date(), -14));
+  if (synced(c) && c.flow === "nocall" && callsAfter >= 2) out.push({ sev: "bad", key: "flowmismatch", title: `You're set to no-call, but ${callsAfter} discovery calls have been booked`, body: "Last 14 days. Either your CRM is still running the call flow or this setting is wrong. Check which automations are published, then match Booking flow in Settings. Until they match, your funnel won't add up.", msg: `${fn}, your dashboard is set to the no-call flow but ${callsAfter} discovery calls have been booked in the last 2 weeks. Check which automations are live in your CRM and get the two matching, or your funnel won't add up.` });
+  else if (synced(c) && c.flow !== "nocall" && settled && callsAfter === 0 && sum14(info.daily_w, "trials_held") >= 5) out.push({ sev: "bad", key: "flowmismatch", title: "You're set to the call flow, but trials are being booked with no discovery calls", body: "Last 14 days. If you've moved to no-call, change Booking flow in Settings. If you haven't, check your discovery calendar is working. Until they match, your funnel won't add up.", msg: `${fn}, your dashboard is set to the call flow but you've had trials booked and no discovery calls in the last 2 weeks. If you've moved to no-call, change it in Settings. If not, check your discovery calendar.` });
+  if (info.missed_calls_14d > 0) out.push({ sev: info.missed_calls_14d >= 3 ? "bad" : "ok", key: "missed", title: `${info.missed_calls_14d} parent call${info.missed_calls_14d > 1 ? "s" : ""} to your business number still need calling back`, body: "Last 14 days. These are people ready to buy. Ring them back from the HighLevel app and they'll clear from this list.", msg: `${fn}, ${info.missed_calls_14d} parent${info.missed_calls_14d > 1 ? "s" : ""} rang your business number in the last fortnight and nobody picked up. That's people ready to buy. Get the app notifications on and call them back today.` });
+  if (c.flow !== "nocall" && info.calls_tracked && info.leads_14d >= 3 && n(info.uncalled_leads_14d) / info.leads_14d >= 0.5) out.push({ sev: "bad", key: "uncalled", title: `${info.uncalled_leads_14d} of ${info.leads_14d} new leads haven't been called from the CRM`, body: "Last 14 days. The standard is every new lead called from the HighLevel app the minute the alert lands. Calls from your own phone don't count, so use the app.", msg: `${fn}, ${info.uncalled_leads_14d} of your ${info.leads_14d} leads in the last 2 weeks didn't get a call from the CRM. Call them from the HighLevel app the second the alert comes in. It's the cheapest win in your business.` });
+  if (c.flow === "nocall" && info.daily_w) {
+    const held = sum14(info.daily_w, "trials_held"), unconf = Math.max(0, held - sum14(info.daily_w, "trials_booked") - sum14(info.daily_w, "trials_cancelled"));
+    if (held >= 3 && unconf / held >= 0.5) out.push({ sev: "bad", key: "unconfirmed", title: `${unconf} of ${held} trial spots held haven't been confirmed`, body: "Last 14 days. A held spot isn't a booked trial until the parent says YES. Chase them today and free up any spot that won't confirm.", msg: `${fn}, ${unconf} of the ${held} trial spots held in the last 2 weeks still haven't been confirmed. A held spot isn't a booked trial until the parent says YES. Chase them today.` });
+  }
   const unm = n(info.unmarked_calls) + n(info.unmarked_trials);
   if (unm > 0) out.push({ sev: unm >= 5 ? "bad" : "ok", key: "unmarked", title: `${unm} appointment${unm > 1 ? "s" : ""} not marked showed or no-show`, body: `${n(info.unmarked_calls)} call${n(info.unmarked_calls) === 1 ? "" : "s"} and ${n(info.unmarked_trials)} trial${n(info.unmarked_trials) === 1 ? "" : "s"} in the last 60 days. Until they're marked, your show rates are guesses. Mark them in the calendar.`, msg: `${fn}, you've got ${unm} calls and trials not marked showed or no-show. Until they're marked your numbers are guessing. Ten minutes in the calendar tonight sorts it.` });
   if (info.past_due > 0) out.push({ sev: "ok", key: "pastdue", title: `${info.past_due} member payment${info.past_due > 1 ? "s" : ""} failed and still unpaid`, body: "Chase it today: Payments › Subscriptions › send a card update link.", msg: `${fn}, ${info.past_due} member payment${info.past_due > 1 ? "s have" : " has"} failed and not been paid. Chase it today before it turns into a cancellation.` });
   const order = (c.flow === "nocall" ? ["hold_rate", "confirm_rate"] : ["call_book_rate", "call_show_rate", "call_to_trial"]).concat(["show_rate", "trial_to_client", "cpl", "cost_per_client"]);
-  for (const k of order) {
+  for (const k of [...order].sort((a, b) => rateWorth(b) - rateWorth(a))) { // of the rates under target, the one costing the most
     if (rag(k, D[k], T) !== "bad") continue;
     if ((k === "call_show_rate" || k === "show_rate") && unm >= 5) continue; // unmarked appointments make these unreliable
     out.push({ sev: "bad", key: k, title: `${T[k].label}: ${fmt(D[k], T[k].fmt)} (target ${tgt(T[k])})`, body: ADVICE[k], msg: `${fn}, your ${T[k].label.toLowerCase()} is ${fmt(D[k], T[k].fmt)} over the last 4 weeks against a target of ${tgt(T[k])}. ${ADVICE[k]}` });
@@ -542,6 +683,10 @@ function issues(c) {
   }
   const lw = rows.find(w => w.week_start === iso(lastMonday()));
   out.adSpendMissing = !lw || !has(lw.ad_spend);
+  // setup first (nothing's right without it), then money at stake, then unmarked appointments, then funnel rates
+  const tier = i => ["sync", "calendars", "flowmismatch"].includes(i.key) ? 0 : ["missed", "uncalled", "unconfirmed", "pastdue"].includes(i.key) ? 1 : i.key === "unmarked" ? 2 : 3;
+  const worth = i => ({ pastdue: n(info.past_due_fees) || n(info.past_due) * fee, missed: n(info.missed_calls_14d) * conv * ltv, uncalled: n(info.uncalled_leads_14d) * conv * ltv, unconfirmed: n(info.open?.unconfirmed?.length) * trialConv * ltv }[i.key] || 0);
+  out.sort((a, b) => tier(a) - tier(b) || worth(b) - worth(a));
   return out;
 }
 
@@ -601,7 +746,7 @@ function render() {
   const me = S.me, c = coachInView();
   let tabs;
   if (me.is_admin && !S.viewing) tabs = [["admin", "All coaches"], ["manage", "Coaches & links"]];
-  else { tabs = [["dash", "Business"], ["ads", "Marketing"], ["money", "Money"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
+  else { tabs = [["dash", "Business"], ["ads", "Marketing"], ["money", "Profit & Loss"]]; if (!synced(c)) tabs.splice(1, 0, ["week", "Weekly numbers"]); tabs.push(["settings", "Settings"]); }
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
   app.innerHTML = `<header class="top"><div class="wrap"><div class="top-row">
       <div class="top-left">${S.viewing ? `<button class="back-btn" id="back" aria-label="Back to all coaches">‹ All coaches</button>` : ""}</div>
@@ -670,9 +815,9 @@ function model(c) {
 }
 function seg(id, opts, cur) { return `<div class="seg" id="${id}" role="group" aria-label="Period">${opts.map(([k, l]) => `<button type="button" data-v="${k}" aria-pressed="${cur === k}">${l}</button>`).join("")}</div>`; }
 function onSeg(root, id, fn) { root.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener("click", () => fn(b.dataset.v))); }
-const SEG4 = [["4w", "4 weeks"], ["13w", "3 months"], ["26w", "6 months"]];
+const SEG_PERIOD = [["7d", "7 days"],["4w", "28 days"], ["13w", "3 months"], ["26w", "6 months"], ["52w", "12 months"]];
 const CRM_HOST = "https://app.gohighlevel.com";
-const CRM_PAGES = { missed: ["conversations/conversations", "Open Conversations"], uncalled: ["opportunities/list", "Open your new leads"], unmarked: ["calendars/appointments", "Open your appointments"], call_show_rate: ["calendars/appointments", "Open your appointments"], show_rate: ["calendars/appointments", "Open your appointments"], call_book_rate: ["opportunities/list", "Open your pipeline"], call_to_trial: ["opportunities/list", "Open your pipeline"], trial_to_client: ["opportunities/list", "Open your pipeline"], hold_rate: ["opportunities/list", "Open your pipeline"], confirm_rate: ["opportunities/list", "Open your pipeline"] };
+const CRM_PAGES = { unconfirmed: ["calendars/appointments", "Open your appointments"], missed: ["conversations/conversations", "Open Conversations"], uncalled: ["opportunities/list", "Open your new leads"], unmarked: ["calendars/appointments", "Open your appointments"], call_show_rate: ["calendars/appointments", "Open your appointments"], show_rate: ["calendars/appointments", "Open your appointments"], call_book_rate: ["opportunities/list", "Open your pipeline"], call_to_trial: ["opportunities/list", "Open your pipeline"], trial_to_client: ["opportunities/list", "Open your pipeline"], hold_rate: ["opportunities/list", "Open your pipeline"], confirm_rate: ["opportunities/list", "Open your pipeline"] };
 function crmLink(c, key) { const loc = c.sync_info?.brand?.location; const p = CRM_PAGES[key]; return loc && p && /^[A-Za-z0-9]+$/.test(loc) ? `${CRM_HOST}/v2/location/${loc}/${p[0]}` : null; }
 const crmLabel = key => (CRM_PAGES[key] || [, "Open your CRM"])[1];
 function revenueLines(M) {
@@ -681,24 +826,54 @@ function revenueLines(M) {
   const left = M.nowM ? M.nowM.left : 0;
   return `<p class="rev-line ${chg >= 0 ? "up" : "down"}">MRR ${chg >= 0 ? "up" : "down"} ${fmt(Math.abs(chg), "gbp0")} this month.</p>${lost ? `<p class="churn-line down">You've lost ${fmt(lost, "gbp0")} of MRR to churn this month (${left} cancellation${left === 1 ? "" : "s"}).</p>` : ""}`;
 }
-function sinceStrip(M) {
-  const daily = M.info.daily; if (!daily) return "";
-  const prev = !readOnly() && S.me.prev_seen ? new Date(S.me.prev_seen) : null;
-  const fresh = prev && Date.now() - prev < 13 * 864e5;
-  const from = fresh ? iso(prev) : iso(addDays(new Date(), -6));
-  const t = { leads: 0, calls_booked: 0, trials_booked: 0, joined: 0, left: 0 };
-  for (const [d, v] of Object.entries(daily)) if (d >= from) for (const k in t) t[k] += n(v[k]);
-  const when = fresh ? `Since you last looked · ${prev.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}` : "Last 7 days";
-  const items = [["New leads", t.leads], ...(M.c.flow === "nocall" ? [] : [["Calls booked", t.calls_booked]]), ["Trials booked", t.trials_booked], ["New members", t.joined], ["Cancellations", t.left]];
-  return `<section class="since"><span class="since-when">${when}</span>${items.map(([l, v]) => `<div><b class="${l === "Cancellations" && v ? "down" : ""}">${v}</b><span>${l}</span></div>`).join("")}</section>`;
+function sinceStrip(M, P) {
+  const daily = M.info.daily; let c = P.cur, when = cap(P.label);
+  let v = { leads: c.leads, calls_booked: c.calls_booked, trials_booked: c.trials_booked, joined: c.new_clients, left: c.cancellations };
+  if (P.key === "7d" && daily) { // rolling 7 days, straight from the daily counts
+    const from = iso(addDays(new Date(), -6)); v = { leads: 0, calls_booked: 0, trials_booked: 0, joined: 0, left: 0 }; when = "Last 7 days";
+    for (const [d, x] of Object.entries(daily)) if (d >= from) for (const k in v) v[k] += n(x[k]);
+  }
+  const items = [["New leads", v.leads], ...(M.c.flow === "nocall" ? [] : [["Calls booked", v.calls_booked]]), ["Trials booked", v.trials_booked], ["New members", v.joined, P.money && n(P.feesAdded) ? `+${fmt(P.feesAdded, "gbp0")} MRR` : ""], ["Cancellations", v.left, P.money && n(P.feesLeft) ? `−${fmt(P.feesLeft, "gbp0")} MRR` : ""]];
+  return `<section class="since"><span class="since-when">${when}</span>${items.map(([l, x, sub]) => `<div><b class="${l === "Cancellations" && x > 0 ? "down" : l === "New members" && x > 0 ? "up" : ""}">${x}</b><span>${l}</span>${sub ? `<small class="since-sub ${l === "New members" ? "up" : v.left > 0 ? "down" : ""}">${sub}</small>` : l === "Cancellations" || l === "New members" ? `<small class="since-sub">&nbsp;</small>` : ""}</div>`).join("")}</section>`;
 }
 function verdict(M) {
+  const V = memberVerdict(M), m = M.mrrChange === null ? null : Math.round(M.mrrChange);
+  if (m === null) return V; // no MRR figure: fall back to members
+  return { ...V, cls: m > 0 ? "up" : m < 0 ? "down" : "flat", title: m > 0 ? "Your business is growing" : m < 0 ? "Your business is down" : "Your business is holding steady" };
+}
+const PAGE_SEG = [["7d", "7 days"], ["4w", "28 days"], ["13w", "3 months"], ["26w", "6 months"], ["52w", "12 months"]];
+const cap = s => s[0].toUpperCase() + s.slice(1);
+function pagePeriod(M, p) {
+  const w = { "7d": 1, "4w": 4, "13w": 13, "26w": 26, "52w": 52 }[p] || 4, from = addDays(thisMonday(), -7 * (w - 1)), to = thisMonday();
+  const prevFrom = addDays(from, -7 * w), prevTo = addDays(from, -7), c = M.c;
+  let rows = inRange(M.rows, from, to), prevRows = inRange(M.rows, prevFrom, prevTo), label = { 1: "this week", 4: "last 28 days", 13: "last 3 months", 26: "last 6 months", 52: "last 12 months" }[w], ago = { 1: "at the start of this week", 4: "28 days ago", 13: "three months ago", 26: "six months ago", 52: "a year ago" }[w];
+  const dw = M.info.daily_w;
+  const rolled = (w === 1 || w === 4) && dw ? lastDaysRows(M.rows, c, w * 7) : null;
+  if (rolled) { // rolling 7 or 28 days, straight from the daily counts
+    const days = w * 7, span = (a, b) => { const r = {}; for (let i = a; i <= b; i++) for (const [k, v] of Object.entries(dw[iso(addDays(new Date(), -i))] || {})) r[k] = (r[k] || 0) + n(v); return r; };
+    const prevSpend = w === 4 ? spendOver(M.rows, 7, 4) : null;
+    rows = rolled; prevRows = [{ revenue: 0, ...span(days, 2 * days - 1), ...(has(prevSpend) ? { ad_spend: prevSpend } : {}) }];
+    if (w === 1) { label = "last 7 days"; ago = "a week ago"; }
+  }
+  const cur = sumWeeks(rows, c), prev = sumWeeks(prevRows, c), add = (rs, k) => rs.reduce((a, r) => a + n(r[k]), 0);
+  let money = rows.some(r => r.fees_left !== undefined), members = cur.new_clients - cur.cancellations, mrrNet = add(rows, "new_fees") - add(rows, "fees_left"), feesLeft = add(rows, "fees_left"), feesAdded = add(rows, "new_fees"), rev = add(rows, "revenue"), prevRev = add(prevRows, "revenue"), left = cur.cancellations;
+  let revG = prevRev ? rev - prevRev : null, revNote = `vs the ${label.replace("last ", "")} before`;
+  const idx = M.months.findIndex(m => m.month === M.nowKey);
+  if (w >= 13 && M.sy && idx > 0) { // 3, 6, 12 months: use the month-end figures
+    const N = { 13: 3, 26: 6, 52: 12 }[w], ms = M.months, at = i => ms[Math.max(0, i)], window = ms.slice(Math.max(0, idx - N + 1), idx + 1), before = ms.slice(Math.max(0, idx - 2 * N + 1), Math.max(0, idx - N + 1)), sum = (rs, f) => rs.reduce((a, m) => a + n(f(m)), 0);
+    money = true; if (M.members !== null) members = M.members - n(at(idx - N).members); mrrNet = n(M.info.mrr_now) - n(at(idx - N).a?.mrr);
+    feesLeft = sum(window, m => m.a?.fees_left); feesAdded = sum(window, m => m.a?.fees_joined); left = sum(window, m => m.left); rev = sum(window, m => m.revenue); prevRev = sum(before, m => m.revenue);
+    revG = prevRev ? rev - prevRev : null;
+  }
+  return { key: p, weeks: w, from, to, prevFrom, label, ago, rows, prevRows, cur, prev, money, members, mrrNet, feesLeft, feesAdded, rev, prevRev, left, revG, revNote };
+}
+function memberVerdict(M) {
   const d = M.members !== null && M.membersPrev !== null ? M.members - M.membersPrev : M.net;
   if (d === null) return { cls: "flat", title: "Your numbers are filling in", head: "Your numbers are filling in", sub: "" };
   const mon = monthShort(M.nowKey);
-  if (d > 0) return { cls: "up", title: "You're growing", head: `You're growing: +${d} member${d === 1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, up from ${fmt(M.membersPrev ?? M.members - d, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}.` };
-  if (d < 0) return { cls: "down", title: "You're shrinking", head: `You're shrinking: ${d} member${d === -1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, down from ${fmt(M.membersPrev, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}. More are leaving than joining.` };
-  return { cls: "flat", title: "Holding steady", head: `Holding steady in ${mon}`, sub: `${fmt(M.members, "int")} paying members. Flat isn't growing: the fix below is how you move it.` };
+  if (d > 0) return { cls: "up", title: "Your business is growing", head: `You're growing: +${d} member${d === 1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, up from ${fmt(M.membersPrev ?? M.members - d, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}.` };
+  if (d < 0) return { cls: "down", title: "Your business is down", head: `Down ${Math.abs(d)} member${d === -1 ? "" : "s"} in ${mon}`, sub: `You're now at ${fmt(M.members, "int")} paying members, down from ${fmt(M.membersPrev, "int")} at the end of ${monthLabel(M.prevKey).split(" ")[0]}. More are leaving than joining.` };
+  return { cls: "flat", title: "Your business is holding steady", head: `Holding steady in ${mon}`, sub: `${fmt(M.members, "int")} paying members. Flat isn't growing: the fix below is how you move it.` };
 }
 function viewDash(main) {
   const c = coachInView(), M = model(c), { T, rows, info, sy, hist, RT, iss } = M;
@@ -738,98 +913,184 @@ function viewDash(main) {
   const noCrmPayments = sy && n(info.retention?.members_ever) === 0 && rows.some(w => n(w.leads));
   if (noCrmPayments) {
     main.appendChild(el("section", "card outside-pay", `<span class="eyebrow">Heads up</span><h3>Your payments aren't going through the CRM</h3>
-      <p class="muted small">We can see your leads, calls and trials, but not who pays you, so paying members, revenue, lifetime value and return on ad spend can't be worked out. Take payments through the CRM's Stripe and they fill in automatically. Until then, you can enter members and revenue yourself on the Money tab.</p>`));
+      <p class="muted small">We can see your leads, calls and trials, but not who pays you, so paying members, revenue, lifetime value and return on ad spend can't be worked out. Take payments through the CRM's Stripe and they fill in automatically. Until then, you can enter members and revenue yourself on the Profit & Loss tab.</p>`));
   }
 
   // 1. verdict
-  const V = verdict(M);
-  const dMem = M.members !== null && M.membersPrev !== null ? M.members - M.membersPrev : M.net;
-  const lostMrr = M.mrrLost !== null ? M.mrrLost : null, leftN = M.nowM ? M.nowM.left : 0;
-  main.appendChild(el("section", `verdict ${V.cls}`, `<div class="v-main"><span class="eyebrow">${greeting(c)}</span><h1>${esc(V.title)}</h1>
-    <div class="v-figs">${dMem !== null ? `<div><b class="${dMem > 0 ? "up" : dMem < 0 ? "down" : ""}">${dMem > 0 ? "+" : ""}${dMem}</b><span>member${Math.abs(dMem) === 1 ? "" : "s"} in ${monthShort(M.nowKey)}</span></div>` : ""}${M.mrrChange !== null ? `<div><b class="${M.mrrChange > 0 ? "up" : M.mrrChange < 0 ? "down" : ""}">${M.mrrChange >= 0 ? "+" : "−"}${fmt(Math.abs(M.mrrChange), "gbp0")}</b><span>MRR in ${monthShort(M.nowKey)}</span></div>` : ""}</div>
-    ${lostMrr ? `<p class="churn-line down">${fmt(lostMrr, "gbp0")} of MRR lost to churn this month (${leftN} cancellation${leftN === 1 ? "" : "s"}).</p>` : ""}</div>${sy ? `<span class="tiny">Live from your CRM · ${ago(c.last_sync)}</span>` : ""}`));
+  if (!PAGE_SEG.some(x => x[0] === S.period)) S.period = "4w";
+  const P = pagePeriod(M, S.period), V = verdict({ ...M, mrrChange: P.money ? P.mrrNet : M.mrrChange });
+  const pageBar = el("div", "filter-row centre", seg("page-p", PAGE_SEG, S.period));
+  main.appendChild(pageBar); onSeg(pageBar, "page-p", v => { S.period = v; render(); });
+  const dMem = P.members, sign = v => v >= 0 ? "+" : "−", tone = v => v > 0 ? "up" : v < 0 ? "down" : "";
+  const spend12 = P.cur.spend_weeks ? P.cur.ad_spend : null;
+  const back = spend12 ? P.cur.new_clients * RT.ltv / spend12 : null;
+  const inP = P.label === "this week" ? "this week" : "in the " + P.label, gbpCh = v => (v >= 0 ? "+" : "−") + fmt(Math.abs(v), "gbp0");
+  const card = (label, value, change, cls, foot) => `<div class="${cls}"><span class="v-l">${label}</span><b>${value}</b>${change ? `<em>${change}</em>` : ""}${foot ? `<small>${foot}</small>` : ""}</div>`;
+  const profitBit = M.lastFull ? `Profit ${fmt(M.lastFull.profit, "gbp0")} in ${monthShort(M.lastFull.month)}` : readOnly() ? "" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add costs to see profit</a>`;
+  const iRev = M.months.findIndex(m => m.month === M.prevKey), revBefore = iRev > 0 ? n(M.months[iRev - 1].revenue) : 0, revLast = M.prevM ? n(M.prevM.revenue) : null, revD = revLast !== null && revBefore ? revLast - revBefore : null;
+  const toneOf = v => v > 0 ? "up" : v < 0 ? "down" : "";
+  const lastMem = [...M.months].reverse().find(m => n(m.members) > 0), lastRev = [...M.months].reverse().find(m => n(m.revenue) > 0);
+  const memStale = !M.members && lastMem, mrrStale = !sy && !n(M.nowM?.revenue) && lastRev;
+  const mrrD = P.money ? P.mrrNet : M.mrrChange, mrrIn = P.money ? inP : `in ${monthShort(M.nowKey)}`;
+  const roasR = back === null ? "" : { good: "up", bad: "down" }[rag("lt_roas", back, T)] || "";
+  const row = [
+    P.money ? card("Total revenue", fmt(P.rev, "gbp0"), P.revG !== null ? `${gbpCh(P.revG)} ${P.revNote}` : "", P.revG === null ? "" : toneOf(P.revG), P.revG === null ? [cap(P.label), profitBit].filter(Boolean).join(" · ") : profitBit)
+      : card(`Total revenue (${monthShort(M.prevKey)})`, revLast === null ? "—" : fmt(revLast, "gbp0"), revD !== null ? `${gbpCh(revD)} on the month before` : "", revD === null ? "" : toneOf(revD), [M.nowM ? `${fmt(n(M.nowM.revenue), "gbp0")} so far in ${monthShort(M.nowKey)}` : "", profitBit].filter(Boolean).join(" · ")),
+    card("Monthly recurring revenue", fmt(sy ? M.mrr : mrrStale ? lastRev.revenue : M.nowM?.revenue, "gbp0"), mrrD === null ? "" : `${gbpCh(mrrD)} net ${mrrIn}`, mrrD === null ? "" : toneOf(mrrD), mrrStale ? `From ${monthShort(lastRev.month)}` : ""),
+    card("Paying members", fmt(memStale ? lastMem.members : M.members, "int"), `${P.members > 0 ? "+" : ""}${P.members} net ${inP}`, toneOf(P.members), memStale ? `At the end of ${monthShort(lastMem.month)}` : ""),
+    back === null && S.me.is_admin ? card("Return on ad spend", '4.2x <span class="ex">example</span>', "", "up", "£4.20 back for every £1 · example until ad spend is entered")
+      : card("Return on ad spend", back === null ? "—" : back.toFixed(1) + "x", "", roasR, back === null ? (readOnly() ? "No ad spend entered yet" : `<a href="#" id="go-spend" style="color:var(--accent-2)">Add your ad spend to see this</a>`) : `£${back.toFixed(2)} back for every £1 · lifetime · ${P.label}`),
+  ].join("");
+  main.appendChild(el("section", `verdict ${V.cls}`, `<div class="v-main">
+    <div class="v-figs">${row}</div>
+    </div>`));
 
-  main.insertAdjacentHTML("beforeend", sinceStrip(M));
 
   // 2. four numbers that matter
-  const spend12 = M.s12.spend_weeks ? M.s12.ad_spend : null;
-  const back = spend12 ? M.s12.new_clients * RT.ltv / spend12 : null;
-  const big = el("section", "section", `<div class="health centred">
-    ${bigTile("Paying members", fmt(M.members, "int"), M.membersPrev !== null ? `vs ${fmt(M.membersPrev, "int")} at the end of ${monthShort(M.prevKey)}` : "", "", "none", pctDelta(M.members, M.membersPrev, ""))}
-    ${bigTile("Monthly recurring revenue", fmt(sy ? M.mrr : M.nowM?.revenue, "gbp0"), sy && M.prevM ? `vs ${fmt(n(M.prevM.a.mrr), "gbp0")} at the end of ${monthShort(M.prevKey)}` : "", "", "none", sy && M.prevM ? pctDelta(M.mrr, n(M.prevM.a.mrr), "£") : "")}
-    ${M.lastFull ? bigTile(`Profit last month (${monthShort(M.lastFull.month)})`, fmt(M.lastFull.profit, "gbp0"), `${fmt(M.lastFull.margin, "pct")} margin · revenue minus all costs`, "", rag("margin", M.lastFull.margin, T), (() => { const pm = M.months.filter(m => m.month < M.lastFull.month && m.profit !== null).pop(); return pm ? pctDelta(M.lastFull.profit, pm.profit, "£") : ""; })())
-      : S.me.is_admin && M.prevM?.revenue ? bigTile(`Profit last month (${monthShort(M.prevKey)})`, fmt(M.prevM.revenue * 0.38, "gbp0") + ' <span class="ex">example</span>', "38% margin · example until costs are entered", "", "good")
-      : bigTile("Profit last month", "—", readOnly() ? "no costs entered yet" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add last month's costs</a>: revenue minus all costs`, "")}
-    ${back === null && S.me.is_admin ? bigTile("Return on ad spend", '4.2x <span class="ex">example</span>', "£4.20 back for every £1 · example until ad spend is entered", "", "good") : bigTile("Return on ad spend", back === null ? "—" : back.toFixed(1) + "x", back === null ? "add your ad spend to see this" : `£${back.toFixed(2)} back for every £1 · lifetime · last 3 months`, "", back === null ? "none" : rag("lt_roas", back, T), (() => { const R = periodRange("13w"), p = sumWeeks(inRange(M.rows, R.prevFrom, R.prevTo), M.c); const pb = p.spend_weeks && p.ad_spend ? p.new_clients * RT.ltv / p.ad_spend : null; return back !== null && pb ? pctDelta(back, pb, "x") : ""; })())}
-  </div>`);
+  const big = el("div");
   if (M.goal > 0 && M.mrr !== null) {
     const ms = hist.slice(-4).map(m => n(m.a?.mrr));
     const perMonth = ms.length > 1 ? (ms[ms.length - 1] - ms[0]) / (ms.length - 1) : 0;
     const gap = M.goal - M.mrr, perMember = RT.fee || n(c.avg_fee);
-    const when = gap <= 0 ? "Target hit. Time to set a bigger one." : perMonth > 0 ? `At your current pace (+${fmt(perMonth, "gbp0")} a month) you'll hit it around ${new Date(new Date().getFullYear(), new Date().getMonth() + Math.ceil(gap / perMonth), 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}.` : "At your current pace you won't get there. You need more revenue joining than leaving every month.";
+    const when = gap <= 0 ? "Target hit. Time to set a bigger one." : ms.length < 3 ? "You'll get an estimated date once there are 3 months of data." : perMonth > 0 ? `At your current pace (+${fmt(perMonth, "gbp0")} a month) you'll hit it around ${new Date(new Date().getFullYear(), new Date().getMonth() + Math.ceil(gap / perMonth), 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}.` : "At your current pace you won't get there. You need more revenue joining than leaving every month.";
     big.appendChild(el("div", "goal", `<div class="goal-top"><span><b>${fmt(M.mrr, "gbp0")}</b> of your <b>${fmt(M.goal, "gbp0")}</b> a month target</span><span class="tiny">${gap > 0 ? `${fmt(gap, "gbp0")} to go · about ${Math.ceil(gap / Math.max(1, perMember))} more members at ${fmt(perMember, "gbp0")}, or put your prices up` : ""}</span></div><div class="goal-track"><div class="goal-bar" style="width:${Math.min(100, M.mrr / M.goal * 100)}%"></div></div><p class="tiny">${esc(when)}</p>`));
   }
-  main.appendChild(big);
-  big.querySelector("#add-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "money"; render(); });
+  if (big.children.length) main.appendChild(big);
+  main.insertAdjacentHTML("beforeend", sinceStrip(M, P) + (sy ? `<p class="tiny live-note">Live from your CRM · ${ago(c.last_sync)}<button type="button" class="refresh-btn" id="crm-refresh">Refresh</button></p>` : ""));
+  main.querySelector("#crm-refresh")?.addEventListener("click", ev => refreshCrm(ev.target, c));
+  main.querySelector("#go-spend")?.addEventListener("click", e => { e.preventDefault(); S.tab = "ads"; S.channel = "paid"; render(); scrollTo(0, 0); });
+  main.querySelector("#add-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "money"; render(); });
 
   // 3. fix this first
   const top3 = iss.slice(0, 3);
-  main.appendChild(el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">This week's priorities</span><p class="tiny">The biggest things costing you clients or money right now, pulled from your CRM.</p></div></div>
-    ${top3.length ? `<div class="prio-list">${top3.map((p, i) => `<div class="hero-fix ${p.sev} ${i ? "small" : ""}"><span class="prio-n">${i + 1}</span><div><h2>${esc(p.title)}</h2><p>${esc(p.body)}</p>${crmLink(M.c, p.key) ? `<a class="crm-link" href="${crmLink(M.c, p.key)}" target="_blank" rel="noopener">${crmLabel(p.key)} ›</a>` : ""}</div></div>`).join("")}</div>`
+  main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>This week's priorities</h2><p class="lead-sub">Always live, ranked by money at stake. Clears as you go.</p></div></div>
+    ${clearedProgress(M)}${top3.length ? `<div class="prio-list">${top3.map((p, i) => `<div class="hero-fix ${p.sev} ${i ? "small" : ""}"><span class="prio-n">${i + 1}</span><div><h2>${esc(p.title)}</h2><p>${esc(p.body)}</p>${crmLink(M.c, p.key) ? `<a class="crm-link" href="${crmLink(M.c, p.key)}" target="_blank" rel="noopener">${crmLabel(p.key)}</a>` : ""}</div></div>`).join("")}</div>`
       : `<div class="hero-fix good"><div><h2>Nothing's leaking right now</h2><p>Every step is on target for the last 4 weeks. This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div></div>`}`));
 
   // 5. two charts that tell the story
-  main.appendChild(el("div", "section-head divided", `<div><span class="eyebrow">Client growth</span></div>`));
+  const firstM = M.months.findIndex(m => n(m.revenue) > 0 || n(m.members) > 0), gHist = M.months.slice(Math.max(firstM < 0 ? 0 : firstM, M.months.length - ({ "26w": 6, "52w": 12 }[S.period] || 3)));
+  // 7 days = day by day, 4 weeks = week by week, members worked back from today's total
+  const grain = M.sy && M.members !== null ? (S.period === "7d" && M.info.daily_w ? "day" : S.period === "4w" ? "week" : null) : null, per = grain || "month";
+  let gShort = null;
+  if (grain) {
+    gShort = grain === "day"
+      ? [6, 5, 4, 3, 2, 1, 0].map(i => { const d = addDays(new Date(), -i), x = M.info.daily_w[iso(d)] || {}; return { label: d.toLocaleDateString("en-GB", { weekday: "short" }), full: d.toLocaleDateString("en-GB", { day: "numeric", month: "long" }), j: n(x.new_clients), l: n(x.cancellations), fa: n(x.new_fees), fl: n(x.fees_left) }; })
+      : [3, 2, 1, 0].map(i => { if (n(M.info.daily_w_days) >= 56) { let j = 0, l = 0, fa = 0, fl = 0; for (let k = i * 7; k <= i * 7 + 6; k++) { const x = M.info.daily_w[iso(addDays(new Date(), -k))] || {}; j += n(x.new_clients); l += n(x.cancellations); fa += n(x.new_fees); fl += n(x.fees_left); } const a = iso(addDays(new Date(), -(i * 7 + 6))), b = iso(addDays(new Date(), -i * 7)); return { label: shortDate(a), full: `${shortDate(a)} to ${shortDate(b)}`, j, l, fa, fl }; }
+        const wk = iso(addDays(thisMonday(), -7 * i)), w = rows.find(x => x.week_start === wk) || {}; return { label: shortDate(wk), full: weekLabel(wk), j: n(w.new_clients), l: n(w.cancellations), fa: n(w.new_fees), fl: n(w.fees_left) }; });
+    let cur = M.members, curM = n(M.mrr); for (const p of [...gShort].reverse()) { p.members = Math.max(0, cur); cur -= p.j - p.l; p.mrr = Math.max(0, curM); p.fees = p.fa - p.fl; curM -= p.fees; }
+  }
+  const gHead = el("div", "section-head divided", `<div><h2>Client growth</h2><p class="lead-sub">${M.sy ? `Your recurring revenue, how long members stay, and who's joined and churned each ${per}.` : `How many paying members you've got, as well as who's joined and churned each ${per}.`}</p></div>`);
+  main.appendChild(gHead);
+  const retRow = retentionRow(M); if (retRow) main.appendChild(retRow);
+
   const charts = el("div", "two");
-  const c1 = el("section", "card section", `<div class="section-head"><div><h3>Paying members by month</h3></div></div>`);
-  c1.appendChild(membersChart(hist, 0));
+  const c1 = el("section", "card section growth-card", `<div class="section-head"><div><h3>${M.sy ? "Recurring revenue" : "Paying members"}</h3></div></div>`);
+  c1.appendChild(membersChart(gShort || gHist.map(m => ({ ...m, mrr: n(m.a?.mrr) + n(m.m?.other_revenue) })), M.sy ? M.goal : 0, M.sy));
+  if (M.sy && !M.goal) c1.appendChild(targetLine(M));
   const last12 = []; for (let i = 11; i >= 0; i--) { const wk = iso(addDays(lastMonday(), -7 * i)); last12.push({ wk, w: rows.find(x => x.week_start === wk) }); }
-  const c2 = el("section", "card section", `<div class="section-head"><div><h3>Signed vs churned, by month</h3></div><div class="legend"><span><i style="background:var(--good)"></i>Signed</span><span><i style="background:var(--bad)"></i>Churned</span></div></div>`);
-  c2.appendChild(joinLeaveChart(hist.map(m => ({ label: monthShort(m.month), full: monthLabel(m.month), j: m.joined, l: m.left }))));
+  const c2 = el("section", "card section growth-card", `<div class="section-head"><div><h3>Joined vs churned</h3></div><div class="legend"><span><i style="background:var(--good)"></i>Joined</span><span><i style="background:var(--bad)"></i>Churned</span></div></div>`);
+  c2.appendChild(joinLeaveChart(gShort || gHist.map(m => ({ label: monthShort(m.month), full: monthLabel(m.month), j: m.joined, l: m.left, ...(M.sy ? { fees: n(m.a?.fees_joined) - n(m.a?.fees_left) } : {}) }))));
   charts.appendChild(c1); charts.appendChild(c2);
   main.appendChild(charts);
+  const lost = cancelsCard(M, P); if (lost) main.appendChild(lost);
 
   // 6. detail tabs
-  const tabsD = [["funnel", "Funnel"], ["year", "Month by month"], ["weeks", "Week by week"], ["compare", "Vs other coaches"]];
+  const tabsD = [["funnel", "Funnel"], ["weeks", "Weekly"], ["year", "Monthly"], ["compare", "Coach average"]];
   if (!S.detail || !tabsD.some(t => t[0] === S.detail)) S.detail = "funnel";
-  const det = el("section", "section divided", `<div class="section-head"><div><span class="eyebrow">Breakdown</span><h2>Your numbers in detail</h2></div></div>
+  const det = el("section", "section divided", `<div class="section-head"><div><h2>Full breakdown</h2><p class="lead-sub">Your funnel, weekly and monthly numbers, and how you compare.</p></div></div>
     <div class="subtabs" role="tablist">${tabsD.map(([k, l]) => `<button class="subtab" role="tab" data-d="${k}" aria-selected="${S.detail === k}">${l}</button>`).join("")}</div><div id="detail"></div>`);
   main.appendChild(det);
   det.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { S.detail = b.dataset.d; render(); document.getElementById("detail")?.scrollIntoView({ block: "nearest" }); }));
   const box = det.querySelector("#detail");
   ({ funnel: detailFunnel, year: detailYear, speed: detailSpeed, weeks: detailWeeks, compare: detailCompare })[S.detail](box, M, last12);
 }
+/* Client growth extras: retention, target and who's left */
+function retentionRow(M) {
+  const { RT, info, sy } = M; if (!sy || !RT.real) return null;
+  const since = info.retention?.since, span = since ? Math.max(1, Math.round((Date.now() - parseISO(since)) / (30.44 * 864e5))) : null, pre = RT.floor ? "at least " : "";
+  const row = el("div", "ret-wrap", `<section class="since ret-strip"><div><b>${RT.churn.toFixed(1)}%</b><span>Monthly churn</span><small>Members who leave each month</small></div><div><b>${pre}${RT.months.toFixed(1)} months</b><span>Average stay</span><small>How long a member stays</small></div><div><b>${pre}${fmt(RT.ltv, "gbp0")}</b><span>Lifetime value</span><small>What a member pays you in total</small></div></section>${span && span < 6 ? `<p class="tiny ret-note">Early figures: ${span} month${span === 1 ? "" : "s"} of data so far.</p>` : ""}`);
+  return row;
+}
+function targetLine(M) {
+  const p = el("p", "tiny target-line"); // only shown with no target: once set, the progress bar at the top carries the detail
+  p.innerHTML = readOnly() ? "No target set yet." : `No target set yet.<button type="button" class="refresh-btn">Set a target</button>`;
+  p.querySelector("button")?.addEventListener("click", () => { S.tab = "settings"; render(); scrollTo(0, 0); });
+  return p;
+}
+function cancelsCard(M, P) {
+  if (!M.sy || !M.info.recent_cancels) return null;
+  // same window as the Cancellations box: rolling for 7 and 28 days, whole months from 3 months up
+  const months = { "13w": 3, "26w": 6, "52w": 12 }[S.period], now = new Date(), from = months ? iso(new Date(now.getFullYear(), now.getMonth() - months + 1, 1)) : iso(addDays(now, -((S.period === "7d" ? 7 : 28) - 1)));
+  const all = M.info.recent_cancels.filter(x => iso(new Date(x.at)) >= from), list = all.slice(0, 10), period = cap(P.label);
+  const when = s => new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), stay = m => m < 1 ? "under a month" : Math.round(m) === 1 ? "1 month" : Math.round(m) + " months";
+  return el("section", "card section growth-card cancels-card", `<div class="section-head"><div><h3>Recent cancellations</h3><p class="tiny">${period}${list.length ? ". Worth a win-back message." : ""}</p></div></div>${list.length ? `<div class="table-wrap"><table><thead><tr><th>Member</th><th>Left</th><th>Stayed</th><th>Fee</th></tr></thead><tbody>${list.map(x => `<tr><td>${esc(x.name || "Name not in CRM")}</td><td>${when(x.at)}</td><td>${stay(n(x.months))}</td><td>${fmt(x.fee, "gbp0")}/mo</td></tr>`).join("")}</tbody></table></div>${all.length > list.length ? `<p class="tiny">Showing the latest ${list.length} of ${all.length}.</p>` : ""}` : `<p class="muted small">Nobody's cancelled in the ${esc(P.label)}.</p>`}`);
+}
+/* "Cleared this week": items the CRM shows as done, against what's still open */
+function clearedProgress(M) {
+  const open = M.info.open; if (!M.sy || !open) return "";
+  const cleared = M.info.cleared || [], left = Object.values(open).reduce((a, x) => a + x.length, 0), total = cleared.length + left;
+  if (!total) return "";
+  const WORDS = { missed: ["call returned", "calls returned"], uncalled: ["lead called", "leads called"], unmarked: ["appointment marked", "appointments marked"], past_due: ["payment recovered", "payments recovered"], unconfirmed: ["trial confirmed", "trials confirmed"] };
+  const parts = Object.keys(WORDS).map(k => { const x = cleared.filter(i => i.k === k).length; return x ? `${x} ${WORDS[k][x === 1 ? 0 : 1]}` : ""; }).filter(Boolean);
+  return `<div class="clear-prog"><div class="clear-top"><span>Cleared this week</span><span>${cleared.length} of ${total}</span></div><div class="clear-track"><div class="clear-bar" style="width:${Math.round(cleared.length / total * 100)}%"></div></div><p class="clear-note">${parts.length ? parts.join(", ") : "Nothing cleared yet. Work through the list below and this fills up."}</p></div>`;
+}
+/* coach-triggered CRM refresh: starts a sync, then waits for it to land */
+async function refreshCrm(btn, c) {
+  btn.disabled = true; btn.textContent = "Refreshing…";
+  try {
+    const viewing = !!S.viewing, res = await rpc("kpi_refresh", { p_code: S.code, p_coach: viewing ? c.id : null });
+    if (res.status === "recent") { toast("Just updated. You can refresh again in a few minutes."); btn.disabled = false; btn.textContent = "Refresh"; return; }
+    if (res.status !== "started") throw new Error(res.status);
+    for (let i = 0; i < 18; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      let fresh;
+      if (viewing) { await loadAdmin(); fresh = (S.admin || []).find(x => x.id === c.id); }
+      else fresh = await rpc("kpi_me", { p_code: S.code });
+      if (fresh && fresh.last_sync !== c.last_sync) { if (viewing) S.viewing = fresh; else S.me = fresh; render(); toast("Updated from your CRM"); return; }
+    }
+    toast("Still updating. Check back in a minute.");
+  } catch (e) { toast("Couldn't refresh. Try again.", true); }
+  btn.disabled = false; btn.textContent = "Refresh";
+}
 const STEP_WORDS = { call_book_rate: "booked a call", call_show_rate: "turned up", call_to_trial: "booked a trial", hold_rate: "got a spot held", confirm_rate: "said YES", show_rate: "turned up", trial_to_client: "joined" };
 function detailFunnel(box, M) {
   const { c, T, rows } = M;
-  const R = periodRange(S.period), cur = sumWeeks(inRange(rows, R.from, R.to), c), D = derive(cur, c);
-  const prev = R.prevFrom ? sumWeeks(inRange(rows, R.prevFrom, R.prevTo), c) : null;
+  const P = pagePeriod(M, S.period), R = P, fc = lastFlowChange(c), fm = fc ? mondayISO(fc.at) : null;
+  let cur = P.cur, flowNote = "", prev = P.prev.leads || P.prev.new_clients ? P.prev : null;
+  if (fc) { // never blend two flows in one funnel, or compare one flow against the other
+    const dw = M.info.daily_w, from7 = iso(addDays(new Date(), -6)), partial = P.weeks === 1 ? fc.at > from7 : iso(P.from) < fm;
+    if (partial) {
+      if (P.weeks === 1 && dw) { const r = {}; for (const [d, x] of Object.entries(dw)) if (d >= fc.at && d >= from7) for (const k in x) r[k] = (r[k] || 0) + n(x[k]); cur = sumWeeks([r], c); }
+      else cur = sumWeeks(inRange(M.rows, parseISO(fm), P.to), c);
+      prev = null; flowNote = `Since you moved to the ${flowName(fc.to)} flow on ${shortDate(fc.at)}`;
+    } else if (iso(P.prevFrom) < fm) prev = null;
+  }
+  const D = derive(cur, c);
   const steps = [{ l: "Leads", f: "leads" }];
   if (c.flow === "nocall") steps.push({ l: "Trial spots held", f: "trials_held", k: "hold_rate" }, { l: "Trials confirmed", f: "trials_booked", k: "confirm_rate" });
   else steps.push({ l: "Calls booked", f: "calls_booked", k: "call_book_rate", side: true }, { l: "Calls attended", f: "calls_attended", k: "call_show_rate" }, { l: "Trials booked", f: "trials_booked", k: "call_to_trial" });
-  steps.push({ l: "Trials attended", f: "trials_attended", k: "show_rate" }, { l: "New clients", f: "new_clients", k: "trial_to_client" });
+  steps.push({ l: "Trials attended", f: "trials_attended", k: "show_rate" }, { l: "New clients from leads", f: "funnel_clients", k: "trial_to_client" });
   // biggest leak = the step furthest below its target
   let leak = null, worst = 0;
   for (const s of steps) if (s.k && D[s.k] !== null) { const m = T[s.k], gap = (m.good - D[s.k]) / m.good; if (gap > worst) { worst = gap; leak = s.k; } }
   const leakStep = steps.find(s => s.k && s.k === leak);
   const topV = Math.max(1, ...steps.map(s => cur[s.f]));
   const SP = speedStrip(M);
-  box.innerHTML = `<div class="filter-row">${seg("period", [...SEG4, ["tw", "This week"]], S.period)}</div>${SP}<div class="card"><p class="tiny" style="margin-bottom:12px">Lead to client: <b style="color:var(--fg)">${fmt(pct(cur.new_clients, cur.leads), "pct")}</b>${prev ? ` · ▲▼ vs the ${R.label.replace("last ", "")} before` : ""}</p>
+  box.innerHTML = `<div class="card">${flowNote ? `<p class="tiny" style="margin-bottom:6px"><b style="color:var(--fg)">${esc(flowNote)}.</b> Earlier weeks are in Weekly.</p>` : ""}<p class="tiny" style="margin-bottom:12px">Lead to client: <b style="color:var(--fg)">${fmt(pct(cur.funnel_clients, cur.leads), "pct")}</b>${prev ? ` · ▲▼ vs the ${R.label.replace("last ", "")} before` : ""}</p>
   <div class="funnel">${steps.map(s => {
     const v = s.k ? D[s.k] : null, r = s.k ? rag(s.k, v, T) : "none", now = cur[s.f], isLeak = s.k && s.k === leak;
     return `<div class="f-row ${isLeak ? "leak" : ""}"><span class="f-label">${s.l}${prev ? ` <span class="f-delta">${delta(now, prev[s.f], "high")}</span>` : ""}</span><div class="f-track"><div class="f-bar" style="width:${Math.min(100, now / topV * 100)}%"></div></div><span class="f-val">${fmt(now, "int")}</span>
-      <span class="f-rate">${s.k ? `<span class="pill ${r}" title="Target ${esc(tgt(T[s.k]))}">${fmt(v, "pct")} ${STEP_WORDS[s.k] || ""}</span>` : ""}</span></div>
+      <span class="f-rate">${s.k ? `<span class="pill ${r}" title="Target ${esc(tgt(T[s.k]))}">${v > 100 ? "100%+" : fmt(v, "pct")} ${STEP_WORDS[s.k] || ""}</span>` : ""}</span></div>
 `;
-  }).join("")}</div>${leakStep && M.iss[0]?.key !== leakStep.k ? `<div class="leak-note"><b>Fix this first: ${esc(T[leakStep.k].label)} ${fmt(D[leakStep.k], "pct")} (target ${tgt(T[leakStep.k])}).</b> ${esc(ADVICE[leakStep.k])}${/show_rate/.test(leakStep.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>This may be lower than it really is: ${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments aren't marked yet.</i>` : ""}</div>` : ""}</div>`;
-  onSeg(box, "period", v => { S.period = v; render(); });
+  }).join("")}</div>${leakStep && M.iss[0]?.key !== leakStep.k ? `<div class="leak-note"><b>Fix this first: ${esc(T[leakStep.k].label)} ${fmt(D[leakStep.k], "pct")} (target ${fmt(T[leakStep.k].good, "pct")}).</b> ${esc(ADVICE[leakStep.k])}${/show_rate/.test(leakStep.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments unmarked, so it may be higher.</i>` : ""}</div>` : ""}</div>${SP}`;
 }
 function detailYear(box, M) {
   const { T, sy } = M;
   const first = M.months.findIndex(m => n(m.revenue) > 0 || n(m.members) > 0 || m.joined > 0);
-  const ms = first < 0 ? [] : M.months.slice(first);
+  const ms = first < 0 ? [] : M.months.slice(first).slice(-({ "26w": 6, "52w": 12 }[S.period] || 3));
   if (!ms.length) { box.innerHTML = `<div class="card"><p class="muted small">No months yet.</p></div>`; return; }
   const tot = ms.reduce((a, m) => (a.j += m.joined, a.l += m.left, a.r += n(m.revenue), a.sp += m.s.spend_weeks ? m.s.ad_spend : 0, a.p += m.profit ?? 0, a.pn += m.profit !== null ? 1 : 0, a), { j: 0, l: 0, r: 0, sp: 0, p: 0, pn: 0 });
-  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Every month since ${monthLabel(ms[0].month)}. Profit and margin show once you add that month's costs on the Money tab.${S.me.is_admin ? ' <span class="ex">example</span> = made-up numbers so you can see the layout; only you see them.' : ""}</p>
+  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Each month on its own, from ${monthLabel(ms[0].month)}. Profit and margin show once you add that month's costs on the Profit & Loss tab.${S.me.is_admin ? ' <span class="ex">example</span> = made-up numbers so you can see the layout; only you see them.' : ""}</p>
   <div class="table-wrap"><table><thead><tr><th>Month</th><th>Members at end</th><th>Joined</th><th>Left</th><th>Net</th>${sy ? "<th>Recurring revenue</th>" : ""}<th>Revenue taken</th><th>Ad spend</th><th>Profit</th><th>Margin</th></tr></thead><tbody>
   ${ms.slice().reverse().map(m => { const net = m.joined - m.left; return `<tr><td>${monthLabel(m.month)}${m.month === M.nowKey ? " (so far)" : ""}</td><td>${fmt(m.members, "int")}</td><td class="c-good">+${m.joined}</td><td class="${m.left ? "c-bad" : ""}">${m.left ? "−" + m.left : "0"}</td><td class="${net > 0 ? "c-good" : net < 0 ? "c-bad" : ""}">${net > 0 ? "+" : ""}${net}</td>${sy ? `<td>${fmt(n(m.a.mrr), "gbp0")}</td>` : ""}<td>${fmt(m.revenue, "gbp0")}</td><td>${m.s.spend_weeks ? fmt(m.s.ad_spend, "gbp0") : "—"}</td>${m.profit === null && S.me.is_admin && n(m.revenue) ? `<td class="ex-cell">${fmt(m.revenue * 0.38, "gbp0")}</td><td class="ex-cell">38%</td>` : `<td>${fmt(m.profit, "gbp0")}</td><td class="c-${rag("margin", m.margin, T)}">${fmt(m.margin, "pct")}</td>`}</tr>`; }).join("")}
   <tr class="total"><td>Total</td><td>${fmt(ms[ms.length - 1].members, "int")}</td><td>+${tot.j}</td><td>${tot.l ? "−" + tot.l : "0"}</td><td>${tot.j - tot.l > 0 ? "+" : ""}${tot.j - tot.l}</td>${sy ? "<td></td>" : ""}<td>${fmt(tot.r, "gbp0")}</td><td>${tot.sp ? fmt(tot.sp, "gbp0") : "—"}</td><td>${tot.pn ? fmt(tot.p, "gbp0") : "—"}</td><td></td></tr>
@@ -837,15 +1098,16 @@ function detailYear(box, M) {
 }
 function speedStrip(M) {
   const { c, T, rows, info } = M;
-  const R = periodRange(S.period), cur = sumWeeks(inRange(rows, R.from, R.to), c), D = derive(cur, c);
+  const P = pagePeriod(M, S.period), R = P, cur = P.cur, D = derive(cur, c);
   const mins = rows.filter(w => w.week_start >= iso(R.from) && w.week_start <= iso(R.to) && has(w.median_mins_to_call)).map(w => +w.median_mins_to_call).sort((a, b) => a - b);
   const med = mins.length ? mins[Math.floor(mins.length / 2)] : null;
   if (!info.calls_tracked) return "";
+  if (c.flow === "nocall") return `<div class="card speed-strip"><div><span class="eyebrow">Missed calls</span><p class="tiny">Parents ringing your business number</p></div>${stat("missed parent calls", fmt(n(info.missed_total_14d ?? info.missed_calls_14d), "int"), "last 14 days", n(info.missed_total_14d ?? info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_total_14d ?? info.missed_calls_14d) ? "ok" : "good")}</div>`;
   return `<div class="card speed-strip"><div><span class="eyebrow">Speed to lead</span><p class="tiny">Calls from the HighLevel app</p></div>
     ${stat("called within 5 minutes", fmt(D.called_5min, "pct"), `target ${tgt(T.called_5min)}`, rag("called_5min", D.called_5min, T))}
     ${stat("called at all", fmt(pct(cur.leads_called, cur.leads), "pct"), `${fmt(cur.leads_called, "int")} of ${fmt(cur.leads, "int")} leads`)}
     ${stat("typical wait for a call", med === null ? "—" : med < 60 ? Math.round(med) + " min" : med < 2880 ? (med / 60).toFixed(1) + " hrs" : Math.round(med / 1440) + " days", "")}
-    ${stat("missed parent calls", fmt(n(info.missed_calls_14d), "int"), "last 14 days", n(info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_calls_14d) ? "ok" : "good")}</div>`;
+    ${stat("missed parent calls", fmt(n(info.missed_total_14d ?? info.missed_calls_14d), "int"), "last 14 days", n(info.missed_total_14d ?? info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_total_14d ?? info.missed_calls_14d) ? "ok" : "good")}</div>`;
 }
 function detailSpeed(box, M) {
   const { c, T, rows, info } = M;
@@ -856,20 +1118,25 @@ function detailSpeed(box, M) {
       ${stat("leads called from the CRM", fmt(pct(cur.leads_called, cur.leads), "pct"), `${fmt(cur.leads_called, "int")} of ${fmt(cur.leads, "int")}`)}
       ${stat("called within 5 minutes", fmt(D.called_5min, "pct"), `target ${tgt(T.called_5min)}`, rag("called_5min", D.called_5min, T))}
       ${stat("typical time to first call", med === null ? "—" : med < 60 ? Math.round(med) + " min" : med < 2880 ? (med / 60).toFixed(1) + " hrs" : Math.round(med / 1440) + " days", "median")}
-      ${stat("missed calls from parents", fmt(n(info.missed_calls_14d), "int"), "last 14 days", n(info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_calls_14d) ? "ok" : "good")}
+      ${stat("missed calls from parents", fmt(n(info.missed_total_14d ?? info.missed_calls_14d), "int"), "last 14 days", n(info.missed_total_14d ?? info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_total_14d ?? info.missed_calls_14d) ? "ok" : "good")}
     </div></div>` : `<div class="card"><p class="muted small">Not tracked yet. Once calls go through the HighLevel app, this shows how fast every lead gets a call.</p></div>`;
 }
 function detailWeeks(box, M, last12) {
   const { c } = M;
-  const wk8 = last12.slice(-8).reverse();
-  const cols = [["Leads", "leads"], ...(c.flow === "nocall" ? [["Held", "trials_held"]] : [["Calls booked", "calls_booked"], ["Calls attended", "calls_attended"]]), ["Trials booked", "trials_booked"], ["Trials attended", "trials_attended"], ["Joined", "new_clients"], ["Left", "cancellations"]];
-  const best = {}; for (const x of cols) best[x[1]] = Math.max(...wk8.map(({ w }) => w ? n(w[x[1]]) : 0));
-  const tot = {}; for (const x of cols) tot[x[1]] = wk8.reduce((a, { w }) => a + (w ? n(w[x[1]]) : 0), 0);
-  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Last 8 weeks. Green = your best week for that number. Ad spend is on the Marketing tab.</p>
+  const RW = pagePeriod(M, S.period), wk8 = inRange(M.rows, RW.from, RW.to).map(w => ({ wk: w.week_start, w })).reverse().filter(({ w }) => ["leads", "calls_booked", "calls_attended", "trials_held", "trials_booked", "trials_attended", "new_clients", "cancellations"].some(k => n(w[k])));
+  if (!wk8.length) { box.innerHTML = `<div class="card"><p class="muted small">Nothing logged in this period yet. Pick a longer filter to see earlier weeks.</p></div>`; return; }
+  const shown = S.weeksAll ? wk8 : wk8.slice(0, 8);
+  const flows = new Set(wk8.length ? wk8.map(({ wk }) => flowInWeek(c, wk)) : [c.flow]), colFlow = { trials_held: "nocall", calls_booked: "call", calls_attended: "call" };
+  const applies = (k, wk) => !colFlow[k] || flowInWeek(c, wk) === colFlow[k];
+  const cols = [["Leads", "leads"], ...(flows.has("nocall") ? [["Held", "trials_held"]] : []), ...(flows.has("call") ? [["Calls booked", "calls_booked"], ["Calls attended", "calls_attended"]] : []), ["Trials booked", "trials_booked"], ["Trials attended", "trials_attended"], ["Joined", "new_clients"], ["Left", "cancellations"]];
+  const best = {}; for (const x of cols) best[x[1]] = Math.max(...wk8.map(({ wk, w }) => w && applies(x[1], wk) ? n(w[x[1]]) : 0));
+  const tot = {}; for (const x of cols) tot[x[1]] = wk8.reduce((a, { wk, w }) => a + (w && applies(x[1], wk) ? n(w[x[1]]) : 0), 0);
+  box.innerHTML = `<p class="tiny" style="margin-bottom:8px">Monday to Sunday. Green = your best week.${flows.size > 1 ? " A dash means that number doesn't apply to the flow you ran that week." : ""}</p>
   <div class="table-wrap"><table><thead><tr><th>Week</th>${cols.map(x => `<th>${x[0]}</th>`).join("")}<th>Lead → client</th></tr></thead><tbody>
-  ${wk8.map(({ wk, w }) => `<tr><td>${weekLabel(wk)}</td>${cols.map(x => { const v = w ? n(w[x[1]]) : null; const hi = v && v === best[x[1]] && x[1] !== "cancellations"; return `<td class="${hi ? "c-good" : x[1] === "cancellations" && v ? "c-bad" : ""}">${v === null ? "—" : fmt(v, "int")}</td>`; }).join("")}<td>${w && n(w.leads) ? fmt(n(w.new_clients) / n(w.leads) * 100, "pct") : "—"}</td></tr>`).join("")}
-  <tr class="total"><td>8-week total</td>${cols.map(x => `<td>${fmt(tot[x[1]], "int")}</td>`).join("")}<td>${tot.leads ? fmt(tot.new_clients / tot.leads * 100, "pct") : "—"}</td></tr>
-  </tbody></table></div>`;
+  ${shown.map(({ wk, w }) => `<tr><td>${weekLabel(wk)}</td>${cols.map(x => { const v = w && applies(x[1], wk) ? n(w[x[1]]) : null; const hi = v && v === best[x[1]] && x[1] !== "cancellations"; return `<td class="${hi ? "c-good" : x[1] === "cancellations" && v ? "c-bad" : ""}">${v === null ? "—" : fmt(v, "int")}</td>`; }).join("")}<td>${w && n(w.leads) ? fmt(n(w.new_clients) / n(w.leads) * 100, "pct") : "—"}</td></tr>`).join("")}
+  <tr class="total"><td>Total</td>${cols.map(x => `<td>${fmt(tot[x[1]], "int")}</td>`).join("")}<td>${tot.leads ? fmt(tot.new_clients / tot.leads * 100, "pct") : "—"}</td></tr>
+  </tbody></table></div>${wk8.length > 8 ? `<p class="tiny weeks-more">${S.weeksAll ? "" : `Latest 8 of ${wk8.length} weeks. Total covers all of them.`}<button type="button" class="refresh-btn" id="weeks-all">${S.weeksAll ? "Show fewer" : "Show all"}</button></p>` : ""}`;
+  box.querySelector("#weeks-all")?.addEventListener("click", () => { S.weeksAll = !S.weeksAll; const y = scrollY; render(); scrollTo(0, y); });
   box.querySelectorAll(".spend-in").forEach(inp => inp.addEventListener("change", async () => {
     try { S.me = await rpc("kpi_save_week", { p_code: S.code, p_week: inp.dataset.wk, p_data: { ad_spend: inp.value } }); toast(`Saved ad spend for ${weekLabel(inp.dataset.wk)}`); render(); }
     catch (er) { toast("Didn't save. Check your connection and try again.", true); }
@@ -878,37 +1145,40 @@ function detailWeeks(box, M, last12) {
 function detailCompare(box, M) {
   const B = S.bench, { s12, info, RT } = M;
   if (!B || (B.coaches < 5 && !S.me.is_admin)) { box.innerHTML = `<div class="card"><p class="muted small">This unlocks once 5 or more S2S coaches are connected. It shows how you compare, anonymously.</p></div>`; return; }
-  const mine = { show_rate: pct(s12.trials_attended, s12.trials_booked), trial_to_client: pct(s12.new_clients, s12.trials_attended), lead_to_client: pct(s12.new_clients, s12.leads), called_5min: info.calls_tracked ? pct(s12.called_5min, s12.leads) : null, churn: RT.real && !RT.floor ? RT.churn : null };
+  const mine = { show_rate: pct(s12.trials_attended, s12.trials_booked), trial_to_client: pct(s12.funnel_clients, s12.trials_attended), lead_to_client: pct(s12.funnel_clients, s12.leads), called_5min: info.calls_tracked ? pct(s12.called_5min, s12.leads) : null, churn: RT.real && !RT.floor ? RT.churn : null };
   const labels = { show_rate: "Trial show rate", trial_to_client: "Trial → client", lead_to_client: "Lead → client", called_5min: "Called within 5 min", churn: "Monthly churn" };
   const rowsB = Object.keys(labels).filter(k => B[k] && B[k].n > 0).map(k => {
     const low = k === "churn", me = mine[k], avg = B[k].avg, top = B[k].top;
     const max = Math.max(low ? 20 : 100, me || 0, avg || 0, top || 0) * (low ? 1.2 : 1);
     const pos = v => v === null || v === undefined ? null : Math.min(100, v / max * 100);
-    const better = me === null || Math.abs(me - avg) < 1 ? "even" : (low ? me < avg : me > avg) ? "good" : "bad";
+    const gold = me !== null && B[k].n >= 4 && (low ? me <= top : me >= top); // best 25%: needs enough coaches for that to mean something
+    const better = gold ? "gold" : me === null || Math.abs(me - avg) < 1 ? "even" : (low ? me < avg : me > avg) ? "good" : "bad";
     return `<div class="cmp-row"><div class="cmp-label">${labels[k]}<small>${low ? "lower is better" : "higher is better"}</small></div>
       <div class="cmp-track">${pos(avg) !== null ? `<span class="cmp-mark avg" style="left:${pos(avg)}%"><i>avg ${fmt(avg, "pct")}</i></span>` : ""}${pos(top) !== null ? `<span class="cmp-mark top" style="left:${pos(top)}%"><i>best 25% ${fmt(top, "pct")}</i></span>` : ""}${pos(me) !== null ? `<div class="cmp-bar ${better}" style="width:${pos(me)}%"></div>` : ""}</div>
-      <div class="cmp-you ${better}">${fmt(me, "pct")}<small>you</small></div></div>`;
+      <div class="cmp-you ${better}">${me > 100 ? "100%+" : fmt(me, "pct")}<small>you</small></div></div>`;
   }).join("");
   box.innerHTML = `<div class="card section"><p class="tiny">Last 3 months, against the S2S average and the best 25% of coaches. Anonymous.${B.coaches < 5 ? ` Coaches see this once 5+ are connected (${B.coaches} now).` : ""}</p><div class="cmp">${rowsB}</div></div>`;
 }
-function greeting(c) { const h = new Date().getHours(); return (h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening") + ", " + esc(firstName(c)); }
-function membersChart(hist, goal) {
+function greeting(c) { const h = new Date().getHours(); return "Good " + (h < 12 ? "morning" : h < 18 ? "afternoon" : "evening") + ", " + esc(firstName(c)); }
+function membersChart(hist, goal, money) {
   const card = el("div");
   if (hist.length < 2) { card.innerHTML = `<p class="tiny">Needs two months of data.</p>`; return card; }
-  const W = 560, H = 210, L = 30, Rr = 14, Tt = 20, B = 24;
-  const maxV = Math.max(5, goal || 0, ...hist.map(m => n(m.members))) * 1.12;
+  const W = 560, H = 220, L = 34, Rr = 30, Tt = 22, B = 44;
+  const val = m => n(money ? m.mrr : m.members), show = v => fmt(v, money ? "gbp0" : "int");
+  const top = Math.max(money ? 100 : 5, ...hist.map(val)), drawGoal = goal && goal <= top * 2.5 ? goal : 0; // a far-off target would squash the line
+  const maxV = Math.max(top, drawGoal) * 1.12;
   const x = i => L + (W - L - Rr) * (hist.length === 1 ? .5 : i / (hist.length - 1)), y = v => Tt + (H - Tt - B) * (1 - v / maxV);
-  const pts = hist.map((m, i) => [x(i), y(n(m.members))]);
+  const pts = hist.map((m, i) => [x(i), y(val(m))]);
   const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
   const area = line + ` L${pts[pts.length - 1][0]} ${H - B} L${pts[0][0]} ${H - B} Z`;
-  card.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Paying members by month">
+  card.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${money ? "Recurring revenue" : "Paying members"} over time">
     <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A47BFF" stop-opacity=".35"/><stop offset="1" stop-color="#A47BFF" stop-opacity="0"/></linearGradient></defs>
-    ${[0, .5, 1].map(f => `<line x1="${L}" x2="${W - Rr}" y1="${y(maxV * f)}" y2="${y(maxV * f)}" stroke="#1C3150"/><text x="${L - 6}" y="${y(maxV * f) + 3}" text-anchor="end">${Math.round(maxV * f)}</text>`).join("")}
-    ${goal ? `<line x1="${L}" x2="${W - Rr}" y1="${y(goal)}" y2="${y(goal)}" stroke="#2BC48A" stroke-dasharray="5 5" stroke-width="1.5"/><text x="${W - Rr}" y="${y(goal) - 5}" text-anchor="end" style="fill:#2BC48A">target ${goal}</text>` : ""}
+    ${drawGoal ? `<line x1="${L}" x2="${W - Rr}" y1="${y(drawGoal)}" y2="${y(drawGoal)}" stroke="#2BC48A" stroke-dasharray="5 5" stroke-width="1.5"/><text x="${W - Rr}" y="${y(drawGoal) - 5}" text-anchor="end" style="fill:#2BC48A">target ${show(drawGoal)}</text>` : ""}
     <path d="${area}" fill="url(#mg)"/><path d="${line}" fill="none" stroke="#A47BFF" stroke-width="3" stroke-linejoin="round"/>
-    ${hist.map((m, i) => `<g><title>${monthLabel(m.month)}: ${fmt(m.members, "int")} members</title><circle cx="${x(i)}" cy="${y(n(m.members))}" r="${i === hist.length - 1 ? 6 : 4}" fill="${i === hist.length - 1 ? "#fff" : "#A47BFF"}"/>
-      <text x="${x(i)}" y="${y(n(m.members)) - 11}" text-anchor="middle" style="fill:#fff;font-weight:800;font-size:12px">${fmt(m.members, "int")}</text>
-      <text x="${x(i)}" y="${H - 7}" text-anchor="middle">${monthShort(m.month)}</text></g>`).join("")}
+    ${hist.map((m, i) => `<g><title>${m.full || monthLabel(m.month)}: ${show(val(m))}${money ? `, ${fmt(m.members, "int")} members` : " members"}</title><circle cx="${x(i)}" cy="${y(val(m))}" r="${i === hist.length - 1 ? 6 : 4}" fill="${i === hist.length - 1 ? "#fff" : "#A47BFF"}"/>
+      <text x="${x(i)}" y="${y(val(m)) - 11}" text-anchor="middle" style="fill:#fff;font-weight:800;font-size:12px">${show(val(m))}</text>
+      <text x="${x(i)}" y="${H - 20}" text-anchor="middle">${m.label || monthShort(m.month)}</text>
+      ${money ? `<text x="${x(i)}" y="${H - 5}" text-anchor="middle" style="fill:#A9B6C8;font-weight:700">${fmt(m.members, "int")}<tspan class="m-word"> members</tspan></text>` : ""}</g>`).join("")}
   </svg>`;
   return card;
 }
@@ -921,40 +1191,83 @@ function joinLeaveChart(pts) {
   const band = (W - L - Rr) / pts.length, bw = Math.min(56, band * .5), x = i => L + band * i + band / 2;
   card.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Members joined and left each month">
     <line x1="${L}" x2="${W - Rr}" y1="${zero}" y2="${zero}" stroke="#2A3F5F"/>
-    ${pts.map((p, i) => { const net = p.j - p.l;
+    ${pts.map((p, i) => { const net = p.j - p.l, hasF = has(p.fees), tone = hasF ? p.fees : net;
       return `<g><title>${p.full}: ${p.j} joined, ${p.l} left, net ${net >= 0 ? "+" : ""}${net}</title>
         ${p.j ? `<rect x="${x(i) - bw / 2}" y="${zero - p.j * unit}" width="${bw}" height="${p.j * unit}" rx="4" fill="#2BC48A"/><text x="${x(i)}" y="${zero - p.j * unit - 5}" text-anchor="middle" style="fill:#fff;font-weight:700;font-size:12px">+${p.j}</text>` : ""}
         ${p.l ? `<rect x="${x(i) - bw / 2}" y="${zero + 1}" width="${bw}" height="${p.l * unit}" rx="4" fill="#F0566A"/><text x="${x(i)}" y="${zero + p.l * unit + 13}" text-anchor="middle" style="fill:#F0566A;font-weight:700;font-size:12px">−${p.l}</text>` : ""}
         <text x="${x(i)}" y="${H - 20}" text-anchor="middle">${p.label}</text>
-        <text x="${x(i)}" y="${H - 5}" text-anchor="middle" style="fill:${net > 0 ? "#2BC48A" : net < 0 ? "#F0566A" : "#6B7C93"};font-weight:700">net ${net > 0 ? "+" : ""}${net}</text></g>`; }).join("")}
+        <text x="${x(i)}" y="${H - 5}" text-anchor="middle" style="fill:${tone > 0 ? "#2BC48A" : tone < 0 ? "#F0566A" : "#6B7C93"};font-weight:700">${hasF ? `${p.fees > 0 ? "+" : ""}${fmt(p.fees, "gbp0")}` : `net ${net > 0 ? "+" : ""}${net}`}</text></g>`; }).join("")}
   </svg>`;
   return card;
 }
 
 /* ---- ads (Tier 4) ---- */
-const CHANNELS = [["paid", "Paid ads"], ["cold", "Cold outreach"], ["warm", "Warm outreach"], ["social", "Social media"], ["referral", "Referrals"], ["reactivation", "Reactivation"]];
+const CHANNELS = [["all", "Overview"], ["paid", "Paid ads"], ["cold", "Cold outreach"], ["warm", "Warm outreach"], ["social", "Social media"], ["referral", "Referrals"], ["reactivation", "Reactivation"]];
 function viewAds(main) {
-  if (!S.channel) S.channel = "paid";
+  if (!S.channel) S.channel = "all";
   const bar = el("div", "subtabs channel-tabs", CHANNELS.map(([k, l]) => `<button class="subtab" data-ch="${k}" aria-selected="${S.channel === k}">${l}</button>`).join(""));
   main.appendChild(el("div", "section-head", `<div><span class="eyebrow">Tier 4 · Advertising</span><h2>Marketing</h2></div>`));
   main.appendChild(bar);
   bar.querySelectorAll(".subtab").forEach(b => b.addEventListener("click", () => { S.channel = b.dataset.ch; render(); }));
+  if (S.channel === "all") { viewOverview(main); return; }
   if (S.channel !== "paid") { viewChannel(main, S.channel); return; }
   paidAds(main);
 }
+const LEAD_KEY = { cold: "leads", warm: "replies", social: "enquiries", referral: "referred", reactivation: "replies" };
+function viewOverview(main) {
+  const c = coachInView(), hand = Object.keys(LEAD_KEY);
+  const example = S.me.is_admin && !hand.some(k => channelEntries(c, k).length);
+  if (!S.chPeriod) S.chPeriod = "4w";
+  const R = periodRange(S.chPeriod), M = model(c), ws = (R.is7 && last7Rows(M.rows, c)) || (R.is28 && lastDaysRows(M.rows, c, 28)) || inRange(M.rows, R.prevFrom ? addDays(R.from, 7) : R.from, R.prevFrom ? addDays(R.to, 7) : R.to), cur = sumWeeks(ws, c);
+  const adLeads = M.sy ? ws.reduce((a, w) => a + n(w.leads_paid), 0) : cur.leads, fee = n(M.RT.fee);
+  const rows = [{ k: "paid", name: "Paid ads", leads: adLeads, booked: null, attended: null, joined: null }].concat(hand.map(k => {
+    const def = CHANNEL_DEFS[k], s = channelSum(inChPeriod(example ? exampleEntries(k) : channelEntries(c, k), def, R), def);
+    return { k, name: def.name, leads: s[LEAD_KEY[k]], booked: s.booked, attended: s.attended, joined: s.joined };
+  }));
+  const tot = key => rows.reduce((a, r) => a + n(r[key]), 0), num = v => v === null ? "—" : fmt(v, "int"), rev = v => v === null || !fee ? "—" : fmt(v * fee, "gbp0");
+  const best = rows.filter(r => r.joined).sort((a, b) => b.joined - a.joined)[0];
+  const cols = [["Leads", r => num(r.leads)], ["Booked", r => num(r.booked)], ["Turned up", r => num(r.attended)], ["New members", r => num(r.joined)], ["Revenue a month", r => rev(r.joined)]];
+  const row = (r, cls, attrs) => `<tr class="${cls}" ${attrs}><td class="l-name" style="text-align:left">${esc(r.name)}</td>${cols.map(([l, f]) => `<td class="l-stat" data-l="${esc(l)}">${f(r)}</td>`).join("")}</tr>`;
+  const totals = { name: "Total", leads: tot("leads"), booked: tot("booked"), attended: tot("attended"), joined: tot("joined") };
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Overview</span><h2>Where your members come from</h2><p class="tiny">Every channel side by side, so you can see what's worth your time.</p></div></div>
+    <div class="filter-row">${seg("ch-period", SEG_PERIOD, S.chPeriod)}</div>
+    ${example ? `<div class="example-flag"><b>Example numbers.</b> ${esc(firstName(c))} hasn't logged any channels yet. Only you see this.</div>` : ""}
+    <div class="card key-stat"><span class="kpi-value">${best ? fmt(best.joined, "int") : "—"}</span><div><b>${best ? `new member${best.joined === 1 ? "" : "s"} from ${esc(best.name.toLowerCase())}` : "No new members logged yet"}</b><p class="tiny">${best ? "Your best channel in this period" : "Log your channels and your best one shows here"}</p></div></div>
+    <div class="table-wrap"><table class="list-table"><thead><tr><th style="text-align:left">Channel</th>${cols.map(([l]) => `<th>${esc(l)}</th>`).join("")}</tr></thead><tbody>
+    ${rows.map(r => row(r, "click", `data-ch="${r.k}"`)).join("")}${row(totals, "l-total", "")}</tbody></table></div>
+    <p class="tiny">Tap a channel to open it. For warm outreach and reactivation, leads are replies. Revenue is new members × your average fee${fee ? ` of ${fmt(fee, "gbp0")}` : ""}. Bookings and members from paid ads will show here soon.</p>`);
+  main.appendChild(sec);
+  onSeg(sec, "ch-period", v => { S.chPeriod = v; render(); });
+  sec.querySelectorAll("tr.click").forEach(tr => tr.addEventListener("click", () => { S.channel = tr.dataset.ch; render(); scrollTo(0, 0); }));
+}
+function inChPeriod(all, def, R) {
+  if (R.is7) { // weekly logs can't be split by day, so use the latest week logged; dated blasts are truly rolling
+    if (def.mode !== "week") return all.filter(e => (e.data.date || e.key) >= iso(addDays(new Date(), -6)));
+    return [iso(thisMonday()), iso(lastMonday())].map(k => all.filter(e => e.key === k)).find(a => a.length) || [];
+  }
+  return def.mode === "week" ? all.filter(e => e.key >= iso(R.prevFrom ? addDays(R.from, 7) : R.from) && e.key <= iso(R.prevFrom ? addDays(R.to, 7) : R.to)) : all.filter(e => (e.data.date || e.key) >= iso(R.prevFrom ? addDays(R.from, 7) : R.from)); }
+function lastLogged(c) {
+  let last = null;
+  for (const x of c.channels || []) {
+    const key = String(x.key), id = key.includes(":") ? key.split(":")[1] : null;
+    const d = id ? (isNaN(parseInt(id, 36)) || parseInt(id, 36) < 1e12 ? null : iso(new Date(parseInt(id, 36)))) : (x.data.date || key).slice(0, 10);
+    if (d && (!last || d > last)) last = d;
+  }
+  return last;
+}
 function paidAds(main) {
   const c = coachInView(), M = model(c), { T, rows, RT, sy } = M;
-  if (!S.adsPeriod) S.adsPeriod = "13w";
-  const R = periodRange(S.adsPeriod), ws = inRange(rows, R.from, R.to), cur = sumWeeks(ws, c), D = derive(cur, c);
+  if (!S.adsPeriod) S.adsPeriod = "4w";
+  const R = periodRange(S.adsPeriod), ws = (R.is7 && last7Rows(rows, c)) || (R.is28 && lastDaysRows(rows, c, 28)) || inRange(rows, R.prevFrom ? addDays(R.from, 7) : R.from, R.prevFrom ? addDays(R.to, 7) : R.to), cur = sumWeeks(ws, c), D = derive(cur, c);
   const adLeads = sy ? ws.reduce((a, w) => a + n(w.leads_paid), 0) : cur.leads;
   const spend = cur.spend_weeks ? cur.ad_spend : null;
   const cpl = spend !== null && adLeads ? spend / adLeads : null;
   const roas = spend ? cur.new_clients * RT.ltv / spend : null;
-  const periods = [["4w", "Last 4 weeks"], ["13w", "Last 3 months"], ["26w", "Last 6 months"]];
+  const periods = [["4w", "Last 28 days"], ["13w", "Last 3 months"], ["26w", "Last 6 months"]];
   const head = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Paid ads</span><h2>Are your ads working?</h2></div></div>
-  <div class="filter-row">${seg("ads-period", SEG4, S.adsPeriod)}</div>
+  <div class="filter-row">${seg("ads-period", SEG_PERIOD, S.adsPeriod)}</div>
   <div class="health centred">
-    ${bigTile("Ad spend", fmt(spend, "gbp0"), spend === null ? "not entered yet" : cur.spend_weeks < cur.weeks ? `${cur.spend_weeks} of ${cur.weeks} weeks entered` : R.label)}
+    ${bigTile("Ad spend", fmt(spend, "gbp0"), spend === null ? "not entered yet" : cur.spend_weeks < cur.weeks ? `${cur.spend_weeks} of ${cur.weeks} weeks entered` : R.is7 ? "latest weekly figure" : R.label)}
     ${bigTile("Total leads", fmt(cur.leads, "int"), sy ? `${fmt(adLeads, "int")} from ads` : "")}
     ${bigTile("Cost per lead", fmt(cpl, "gbp"), `ad leads only · target ${tgt(T.cpl)}`, "", rag("cpl", cpl, T))}
     ${bigTile("ROAS", D.fm_roas === null ? "—" : D.fm_roas.toFixed(1) + "x", D.fm_roas === null ? "needs ad spend" : `£${D.fm_roas.toFixed(2)} back per £1 in the first month`, "", rag("fm_roas", D.fm_roas, T))}
@@ -1021,46 +1334,48 @@ function spendChart(pts, sy) {
 
 /* ---- channel trackers (from the Advertising Playbooks) ---- */
 const pctOf = (a, b) => b > 0 ? fmt(a / b * 100, "pct") : "—";
+const showFoot = s => `${fmt(s.attended, "int")} turned up · ${pctOf(s.joined, s.attended)} of them joined`;
+const ATTENDED = ["attended", "Turned up", "Marked Showed in your CRM"];
 const perOne = (a, b) => b > 0 ? (a / b).toFixed(a / b < 10 ? 1 : 0) : "—";
 const CHANNEL_DEFS = {
-  cold: { name: "Cold outreach", mode: "week", how: "Fill this in every evening (it adds up through the week): posts in Facebook groups, the messages that came from them, and who booked.",
-    fields: [["posts", "Posts made", "In Facebook groups"], ["groups", "Groups posted in", ""], ["engaged", "Likes + comments", "On your posts"], ["messages", "Messages sent", "To parents who engaged"], ["replies", "Replies", ""], ["booked", "Booked", "Call or trial"], ["joined", "Joined", "Became paying members"], ["post", "This week's post", "Short name, so you can compare", "text"]],
-    tiles: s => [["Posts made", fmt(s.posts, "int"), `${fmt(s.groups, "int")} groups`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.messages)} of messages sent`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.replies)} of replies`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.joined, s.booked)} of bookings`]],
-    key: s => ["posts per booking", perOne(s.posts, s.booked), "how many posts it takes to book one family"],
-    tip: "Groups with nothing after 4–5 posts: drop them. Keep this week's post if it beat last week's on bookings per post." },
-  warm: { name: "Warm outreach", mode: "week", how: "Update this every evening: people you messaged (friends, followers, new engagers), follow-ups and who booked.",
-    fields: [["messaged", "People messaged", "First message"], ["followups", "Follow-ups sent", "2-day follow-ups"], ["replies", "Replies", ""], ["names", "Names given", "People they put you on to"], ["booked", "Booked", "Call or trial"], ["joined", "Joined", "Became paying members"]],
-    tiles: s => [["People messaged", fmt(s.messaged, "int"), `${fmt(s.followups, "int")} follow-ups`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.messaged)} reply rate`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.replies)} of replies`], ["Joined", fmt(s.joined, "int"), `${fmt(s.names, "int")} names given`]],
+  cold: { name: "Cold outreach", mode: "week", how: "Once a week (Sunday works): your posts in Facebook groups, the leads they brought in, and who booked.",
+    fields: [["posts", "Posts made", "In Facebook groups"], ["leads", "Leads", "Parents who liked, commented or messaged"], ["messages", "Messages sent", "To those parents"], ["replies", "Replies", ""], ["booked", "Booked", "Call or trial"], ATTENDED, ["joined", "Joined", "Became paying members"], ["post", "This week's post", "Short name, so you can compare", "text"]],
+    tiles: s => [["Posts made", fmt(s.posts, "int"), `${s.n} week${s.n === 1 ? "" : "s"} logged`], ["Leads", fmt(s.leads, "int"), `${pctOf(s.replies, s.messages)} replied to your message`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.leads)} of leads`], ["Joined", fmt(s.joined, "int"), showFoot(s)]],
+    key: s => ["leads per post", perOne(s.leads, s.posts), "how many parents each post brings in"],
+    tip: "Groups with nothing after 4–5 posts: mark them Drop in My groups below. Keep this week's post if it beat last week's on leads per post." },
+  warm: { name: "Warm outreach", mode: "week", how: "Once a week (Sunday works): people you messaged (friends, followers, new engagers), follow-ups and who booked.",
+    fields: [["messaged", "People messaged", "First message"], ["followups", "Follow-ups sent", "2-day follow-ups"], ["replies", "Replies", ""], ["names", "Names given", "People they put you on to"], ["booked", "Booked", "Call or trial"], ATTENDED, ["joined", "Joined", "Became paying members"]],
+    tiles: s => [["People messaged", fmt(s.messaged, "int"), `${fmt(s.followups, "int")} follow-ups · ${fmt(s.names, "int")} names given`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.messaged)} reply rate`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.replies)} of replies`], ["Joined", fmt(s.joined, "int"), showFoot(s)]],
     key: s => ["messages per booking", perOne(s.messaged, s.booked), "how many people you message to book one family"],
     tip: "Low replies? Change your first message. Replies but no bookings? Push for the call sooner." },
   social: { name: "Social media", mode: "week", how: "Once a week (Sunday works): what you posted and how many parents it brought in.",
-    fields: [["posts", "Posts and Reels", ""], ["stories", "Stories", ""], ["enquiries", "Enquiries", "DMs, comments, Story replies, form"], ["booked", "Booked", "Call or trial"], ["joined", "Joined", "Became paying members"], ["best", "Best post this week", "Copy it next week", "text"]],
-    tiles: s => [["Posts", fmt(s.posts, "int"), `${fmt(s.stories, "int")} Stories`], ["Enquiries", fmt(s.enquiries, "int"), `${perOne(s.enquiries, s.posts + s.stories)} per post or Story`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.enquiries)} of enquiries`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.joined, s.booked)} of bookings`]],
+    fields: [["posts", "Posts and Reels", ""], ["stories", "Stories", ""], ["enquiries", "Enquiries", "DMs, comments, Story replies, form"], ["booked", "Booked", "Call or trial"], ATTENDED, ["joined", "Joined", "Became paying members"], ["best", "Best post this week", "Copy it next week", "text"]],
+    tiles: s => [["Posts", fmt(s.posts, "int"), `${fmt(s.stories, "int")} Stories`], ["Enquiries", fmt(s.enquiries, "int"), `${perOne(s.enquiries, s.posts + s.stories)} per post or Story`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.enquiries)} of enquiries`], ["Joined", fmt(s.joined, "int"), showFoot(s)]],
     key: s => ["posts per enquiry", perOne(s.posts + s.stories, s.enquiries), "posts and Stories it takes to get one parent messaging"],
     tip: "A post that took off? Run it as an ad. Messages but no bookings? See where they go quiet." },
   referral: { name: "Referrals", mode: "week", how: "Once a week: how many families you asked, the friends they sent, and rewards paid.",
-    fields: [["asked", "Families asked", "For a referral"], ["referred", "Friends referred", "New families who got in touch"], ["booked", "Trials booked", ""], ["joined", "Joined", "Became paying members"], ["rewards", "Rewards paid (£)", "Money off or cash", "money"]],
-    tiles: s => [["Families asked", fmt(s.asked, "int"), ""], ["Friends referred", fmt(s.referred, "int"), `${perOne(s.referred * 10, s.asked)} per 10 families asked`], ["Trials booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.referred)} of referrals`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.joined, s.booked)} of trials`]],
+    fields: [["asked", "Families asked", "For a referral"], ["referred", "Friends referred", "New families who got in touch"], ["booked", "Trials booked", ""], ATTENDED, ["joined", "Joined", "Became paying members"], ["rewards", "Rewards paid (£)", "Money off or cash", "money"]],
+    tiles: s => [["Families asked", fmt(s.asked, "int"), ""], ["Friends referred", fmt(s.referred, "int"), `${perOne(s.referred * 10, s.asked)} per 10 families asked`], ["Trials booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.referred)} of referrals`], ["Joined", fmt(s.joined, "int"), showFoot(s)]],
     key: s => ["cost per new client", s.joined ? fmt(s.rewards / s.joined, "gbp0") : "—", "rewards paid ÷ families who joined. Compare it with your ad cost per client"],
-    tip: "Ask every family at least once a month. Pay rewards the same day the new family's first payment goes through." },
+    tip: "Ask every family at least once a month. Add each friend to My referrals below, and pay rewards the same day the new family's first payment goes through." },
   reactivation: { name: "Reactivation", mode: "blast", how: "Log each SMS or email blast: who it went to and what came back.",
-    fields: [["date", "Date sent", "", "date"], ["list", "List", "e.g. Reactivation List, Ex-members", "text"], ["via", "SMS, email or both", "", "text"], ["sent", "Sent to", "Contacts"], ["replies", "Replies", ""], ["booked", "Trials booked", ""], ["joined", "Joined", ""], ["stops", "Said STOP", ""], ["cost", "Cost (£)", "SMS cost, if you know it", "money"]],
-    tiles: s => [["Blasts sent", fmt(s.n, "int"), `${fmt(s.sent, "int")} contacts`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.sent)} reply rate`], ["Trials booked", fmt(s.booked, "int"), `${perOne(s.booked * 100, s.sent)} per 100 sent`], ["Joined", fmt(s.joined, "int"), `${pctOf(s.stops, s.sent)} said STOP`]],
-    key: s => ["trials per blast", perOne(s.booked, s.n), "the number to beat next time"],
+    fields: [["date", "Date sent", "", "date"], ["list", "List", "Your CRM smart list", "select", ["Reactivation List", "Churned"]], ["via", "Sent by", "", "select", ["SMS", "Email", "SMS and email"]], ["sent", "Sent to", "Contacts"], ["replies", "Replies", ""], ["booked", "Booked", "Trials, or rejoins for Churned"], ATTENDED, ["joined", "Joined", ""], ["stops", "Said STOP", ""], ["cost", "Cost (£)", "SMS cost, if you know it", "money"]],
+    tiles: s => [["Blasts sent", fmt(s.n, "int"), `${fmt(s.sent, "int")} contacts`], ["Replies", fmt(s.replies, "int"), `${pctOf(s.replies, s.sent)} reply rate`], ["Booked", fmt(s.booked, "int"), `${perOne(s.booked * 100, s.sent)} per 100 sent · ${pctOf(s.stops, s.sent)} said STOP`], ["Joined", fmt(s.joined, "int"), showFoot(s)]],
+    key: s => ["bookings per blast", perOne(s.booked, s.n), "the number to beat next time"],
     tip: "A few STOPs are normal. Lots of them? You're messaging too often, or the offer was weak." },
 };
-function channelEntries(c, ch) { return (c.channels || []).filter(x => x.channel === ch); }
+function channelEntries(c, ch) { return (c.channels || []).filter(x => x.channel === ch && !String(x.key).includes(":")); }
 const EXAMPLE_ROWS = {
-  cold: [[14, 7, 52, 21, 11, 4, 2, "Spaces this Saturday"], [11, 6, 38, 16, 7, 2, 1, "Spaces this Saturday"], [16, 8, 61, 24, 13, 5, 2, "Is your child stuck on the bench?"], [9, 5, 30, 12, 5, 1, 0, "Free trial, all abilities"]],
-  warm: [[25, 12, 14, 3, 4, 2], [18, 9, 9, 2, 2, 1], [30, 15, 17, 5, 5, 2], [12, 8, 6, 1, 1, 0]],
-  social: [[5, 18, 9, 3, 1, "Training clip: 1v1 finishing"], [4, 15, 6, 2, 1, "Parent testimonial"], [6, 21, 12, 4, 2, "Player of the week"], [3, 10, 4, 1, 0, "Spaces post"]],
-  referral: [[20, 3, 2, 1, 60], [12, 1, 1, 1, 60], [25, 4, 3, 2, 120], [8, 0, 0, 0, 0]],
-  reactivation: [["List: Reactivation List", "SMS", 220, 31, 9, 4, 6, 9.5], ["Ex-members", "Email", 85, 6, 2, 1, 1, 0], ["Reactivation List", "SMS", 190, 22, 6, 2, 4, 8.2]],
+  cold: [[14, 58, 21, 11, 4, 3, 2, "Spaces this Saturday"], [11, 42, 16, 7, 2, 2, 1, "Spaces this Saturday"], [16, 66, 24, 13, 5, 4, 2, "Is your child stuck on the bench?"], [9, 32, 12, 5, 1, 1, 0, "Free trial, all abilities"]],
+  warm: [[25, 12, 14, 3, 4, 3, 2], [18, 9, 9, 2, 2, 2, 1], [30, 15, 17, 5, 5, 4, 2], [12, 8, 6, 1, 1, 1, 0]],
+  social: [[5, 18, 9, 3, 2, 1, "Training clip: 1v1 finishing"], [4, 15, 6, 2, 2, 1, "Parent testimonial"], [6, 21, 12, 4, 3, 2, "Player of the week"], [3, 10, 4, 1, 1, 0, "Spaces post"]],
+  referral: [[20, 3, 2, 2, 1, 60], [12, 1, 1, 1, 1, 60], [25, 4, 3, 3, 2, 120], [8, 0, 0, 0, 0, 0]],
+  reactivation: [["Reactivation List", "SMS", 220, 31, 9, 6, 4, 6, 9.5], ["Churned", "SMS and email", 85, 6, 2, 2, 1, 1, 3.1], ["Reactivation List", "SMS", 190, 22, 6, 5, 2, 4, 8.2]],
 };
 function exampleEntries(ch) {
   const def = CHANNEL_DEFS[ch], rows = EXAMPLE_ROWS[ch];
   if (def.mode === "week") return rows.map((r, i) => { const data = {}; def.fields.forEach(([k], j) => { if (r[j] !== undefined) data[k] = r[j]; }); return { channel: ch, key: iso(addDays(thisMonday(), -7 * i)), data, example: true }; });
-  return rows.map((r, i) => { const d = iso(addDays(new Date(), -9 * i - 3)); const data = { date: d, list: r[0].replace("List: ", ""), via: r[1], sent: r[2], replies: r[3], booked: r[4], joined: r[5], stops: r[6], cost: r[7] }; return { channel: ch, key: d + "-ex" + i, data, example: true }; });
+  return rows.map((r, i) => { const d = iso(addDays(new Date(), -9 * i - 3)); const data = { date: d, list: r[0], via: r[1], sent: r[2], replies: r[3], booked: r[4], attended: r[5], joined: r[6], stops: r[7], cost: r[8] }; return { channel: ch, key: d + "-ex" + i, data, example: true }; });
 }
 function channelSum(entries, def) {
   const s = { n: entries.length };
@@ -1073,14 +1388,16 @@ function viewChannel(main, ch) {
   const all = showExample ? exampleEntries(ch) : real;
   if (!S.chPeriod) S.chPeriod = "4w";
   const R = periodRange(S.chPeriod);
-  const inPeriod = def.mode === "week" ? all.filter(e => e.key >= iso(R.from) && e.key <= iso(addDays(R.to, 7))) : all.filter(e => (e.data.date || e.key) >= iso(R.from));
+  const inPeriod = inChPeriod(all, def, R);
   const s = channelSum(inPeriod, def), K = def.key(s);
   const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">${def.name}</span><h2>${def.name} tracker</h2><p class="tiny">${esc(def.how)}</p></div></div>
-  <div class="filter-row">${seg("ch-period", SEG4, S.chPeriod)}</div>
+  <div class="filter-row">${seg("ch-period", SEG_PERIOD, S.chPeriod)}</div>
   ${all.length ? `<div class="health">${def.tiles(s).map(([l, v, f]) => bigTile(l, v, f)).join("")}</div>
   <div class="card key-stat"><span class="kpi-value">${K[1]}</span><div><b>${esc(K[0])}</b><p class="tiny">${esc(K[2])}</p></div></div>` : `<div class="card"><p class="muted small">Nothing logged yet. Add your first ${def.mode === "week" ? "week" : "blast"} below and your numbers appear here.</p></div>`}
   <p class="tiny">${esc(def.tip)}</p>`);
   if (showExample) sec.insertBefore(el("div", "example-flag", `<b>Example numbers.</b> ${esc(firstName(c))} hasn't logged any ${def.name.toLowerCase()} yet, so this shows made-up numbers to preview the layout. Only you see this; coaches see their own numbers or an empty tracker.`), sec.children[1]);
+  if (ch === "referral") { const owed = (c.channels || []).filter(x => x.channel === "referral" && String(x.key).startsWith("f:") && CH_LISTS.referral.status(x.data)[0] === "REWARD OWED").length;
+    if (owed) sec.insertBefore(el("div", "card owed", `<b class="bad-t">${owed} reward${owed > 1 ? "s" : ""} owed.</b> <span class="small">Pay ${owed > 1 ? "them" : "it"} today. They're in My referrals below.</span>`), sec.children[1]); }
   main.appendChild(sec);
   onSeg(sec, "ch-period", v => { S.chPeriod = v; render(); });
 
@@ -1102,7 +1419,7 @@ function viewChannel(main, ch) {
       const editing = S.chEdit && all.find(e => e.key === S.chEdit);
       row = editing ? editing.data : { date: iso(new Date()) };
       const f = el("section", "card section", `<div class="row" style="justify-content:space-between"><h3>${editing ? "Edit blast" : "Log a blast"}</h3>${editing ? `<button class="btn-ghost" id="ch-new">New blast instead</button>` : ""}</div>
-        <form id="ch-form"><div class="grid-form">${def.fields.map(([k, l, h, t]) => `<label for="cf-${k}">${esc(l)}${h ? ` <small>${esc(h)}</small>` : ""}<input id="cf-${k}" ${t === "text" ? 'type="text" maxlength="200"' : t === "date" ? 'type="date"' : `type="number" inputmode="decimal" min="0" step="${t === "money" ? "0.01" : "1"}"`} value="${esc(row[k] ?? "")}"></label>`).join("")}</div>
+        <form id="ch-form"><div class="grid-form">${def.fields.map(f => fieldInput(f, row, "cf-")).join("")}</div>
         <div class="form-actions" style="margin-top:14px"><button class="btn" type="submit">${editing ? "Save changes" : "Save blast"}</button></div></form>`);
       main.appendChild(f);
       f.querySelector("#ch-new")?.addEventListener("click", () => { S.chEdit = null; render(); });
@@ -1111,7 +1428,7 @@ function viewChannel(main, ch) {
   }
 
   // history
-  const numF = def.fields.filter(([, , , t]) => t !== "text" && t !== "date");
+  const numF = def.fields.filter(([, , , t]) => !t || t === "money");
   const rowsH = def.mode === "week" ? all.slice().sort((a, b) => a.key < b.key ? 1 : -1).slice(0, 12) : all.slice().sort((a, b) => (a.data.date || a.key) < (b.data.date || b.key) ? 1 : -1);
   if (rowsH.length) {
     const h = el("section", "section", `<div class="section-head"><div><h2>${def.mode === "week" ? "Week by week" : "Every blast"}</h2>${readOnly() ? "" : `<p class="tiny">Tap a row to edit it.</p>`}</div></div>
@@ -1125,10 +1442,75 @@ function viewChannel(main, ch) {
       try { S.me = await rpc("kpi_delete_channel", { p_code: S.code, p_channel: ch, p_key: b.dataset.k }); S.chEdit = null; toast("Blast deleted"); render(); } catch (er) { toast("Couldn't delete. Try again.", true); }
     }));
   }
+  if (CH_LISTS[ch]) viewList(main, ch, CH_LISTS[ch]);
+}
+function fieldInput([k, l, h, t, opts], row, pre) {
+  const v = row[k] ?? "", lab = `<label for="${pre}${k}">${esc(l)}${h ? ` <small>${esc(h)}</small>` : ""}`;
+  if (t === "select") return `${lab}<select id="${pre}${k}"><option value=""></option>${opts.map(o => `<option ${o === v ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>`;
+  return `${lab}<input id="${pre}${k}" ${t === "text" ? 'type="text" maxlength="200"' : t === "date" ? 'type="date"' : `type="number" inputmode="decimal" min="0" step="${t === "money" ? "0.01" : "1"}"`} value="${esc(v)}"></label>`;
+}
+function readFields(fields, form, pre) {
+  const data = {};
+  for (const [k, , , t] of fields) { const v = form.querySelector("#" + pre + k).value; if (v === "") continue; data[k] = !t || t === "money" ? +v : v; }
+  return data;
+}
+
+/* ---- lists inside a channel (stored in channel_logs with "<prefix>:" keys) ---- */
+const CH_LISTS = {
+  cold: { prefix: "g", title: "My groups", noun: "group", how: "Every Facebook group you post in. Tap +1 each time you post, and update leads once a week.",
+    fields: [["name", "Group name", "", "text"], ["town", "Town", "", "text"], ["members", "Members", ""], ["link", "Link", "Paste the group's web address", "text"], ["posts", "Times posted", ""], ["leads", "Leads from it", "Parents who liked, commented or messaged"], ["booked", "Booked", "Call or trial"], ["status", "Keep or drop?", "", "select", ["Testing", "Keep", "Drop"]]],
+    cols: [["town", "Town"], ["posts", "Posts"], ["leads", "Leads"], ["booked", "Booked"]],
+    status: d => d.status === "Drop" ? ["Dropped", "none"] : n(d.posts) >= 4 && !n(d.leads) ? ["Drop it?", "bad"] : d.status === "Keep" ? ["Keep", "good"] : ["Testing", "ok"],
+    sort: (a, b) => (a.data.status === "Drop") - (b.data.status === "Drop") || n(b.data.leads) - n(a.data.leads),
+    summary: rows => { const live = rows.filter(r => r.data.status !== "Drop"), flag = live.filter(r => n(r.data.posts) >= 4 && !n(r.data.leads)).length; return `${live.length} groups you're posting in${flag ? ` · <b class="bad-t">${flag} with nothing after 4+ posts: drop ${flag > 1 ? "them" : "it"}</b>` : ""}`; },
+    quick: { field: "posts", label: "+1 post" },
+    examples: [{ name: "Cumbernauld Mums & Dads", town: "Cumbernauld", members: 8400, posts: 6, leads: 9, booked: 3, status: "Keep" }, { name: "Hamilton Buy Sell Swap", town: "Hamilton", members: 12100, posts: 5, leads: 0, booked: 0, status: "Testing" }, { name: "Kids Football Lanarkshire", town: "Motherwell", members: 2300, posts: 2, leads: 2, booked: 1, status: "Testing" }] },
+  referral: { prefix: "f", title: "My referrals", noun: "friend", how: "One row for every friend a family sends you. Shows you who's owed a reward.",
+    fields: [["date", "Got in touch", "", "date"], ["by", "Referred by", "The family who sent them", "text"], ["family", "New family", "Parent's name", "text"], ["child", "Child's first name", "", "text"], ["offer", "Offer", "", "select", ["Evergreen", "Seasonal"]], ["trial", "Trial date", "", "date"], ["joined", "Joined?", "", "select", ["Not yet", "Yes", "No"]], ["paid", "First payment through?", "", "select", ["No", "Yes"]], ["reward", "Reward paid?", "", "select", ["No", "Yes"]]],
+    cols: [["by", "Referred by"], ["child", "Child"]],
+    status: d => d.joined === "No" ? ["Didn't join", "none"] : d.reward === "Yes" ? ["Reward paid", "good"] : d.joined === "Yes" && d.paid === "Yes" ? ["REWARD OWED", "bad"] : d.joined === "Yes" ? ["Waiting on first payment", "ok"] : d.trial ? ["Trial booked", "ok"] : ["In touch", "none"],
+    sort: (a, b) => (b.data.date || "").localeCompare(a.data.date || ""),
+    summary: rows => { const owed = rows.filter(r => CH_LISTS.referral.status(r.data)[0] === "REWARD OWED").length; return owed ? `<b class="bad-t">${owed} reward${owed > 1 ? "s" : ""} owed. Pay ${owed > 1 ? "them" : "it"} today.</b>` : `${rows.length} friends referred · no rewards owed`; },
+    examples: [{ date: iso(addDays(new Date(), -3)), by: "The Smiths", family: "Claire Brown", child: "Jack", offer: "Evergreen", trial: iso(addDays(new Date(), 2)), joined: "Not yet" }, { date: iso(addDays(new Date(), -12)), by: "The Wilsons", family: "Mark Reid", child: "Ellie", offer: "Evergreen", joined: "Yes", paid: "Yes", reward: "No" }, { date: iso(addDays(new Date(), -30)), by: "The Smiths", family: "Lisa Grant", child: "Ben", offer: "Seasonal", joined: "Yes", paid: "Yes", reward: "Yes" }] },
+};
+function viewList(main, ch, L) {
+  const c = coachInView(), pre = L.prefix + ":";
+  const real = (c.channels || []).filter(x => x.channel === ch && String(x.key).startsWith(pre));
+  const example = S.me.is_admin && !real.length;
+  const rows = (example ? L.examples.map((d, i) => ({ key: pre + "ex" + i, data: d, example: true })) : real).slice().sort(L.sort);
+  S.listEdit = S.listEdit || {};
+  const editKey = S.listEdit[ch], editing = editKey && rows.find(r => r.key === editKey);
+  const ro = readOnly(), rowRo = ro || example;
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">${esc(CHANNEL_DEFS[ch].name)}</span><h2>${esc(L.title)}</h2><p class="tiny">${esc(L.how)}</p></div></div>
+    ${example ? `<div class="example-flag"><b>Example rows.</b> Only you see these; coaches see their own list.</div>` : ""}
+    ${rows.length ? `<p class="small" style="margin:8px 0 10px">${L.summary(rows)}</p>
+    <div class="table-wrap"><table class="list-table"><thead><tr><th style="text-align:left">${L.noun === "group" ? "Group" : "New family"}</th>${L.cols.map(([, l]) => `<th>${esc(l)}</th>`).join("")}<th>Status</th>${rowRo ? "" : "<th></th>"}</tr></thead><tbody>
+    ${rows.map(r => { const [st, cls] = L.status(r.data); const nm = L.noun === "group" ? r.data.name : r.data.family;
+      return `<tr class="${rowRo ? "" : "click"}" data-k="${esc(r.key)}"><td class="l-name" style="text-align:left">${L.noun === "group" && r.data.link && /^https?:\/\//.test(r.data.link) ? `<a href="${esc(r.data.link)}" target="_blank" rel="noopener">${esc(nm || "—")}</a>` : esc(nm || "—")}</td>${L.cols.map(([k, l]) => `<td class="l-stat" data-l="${esc(l)}">${has(r.data[k]) ? esc(r.data[k]) : "—"}</td>`).join("")}<td class="l-status"><span class="pill ${cls}">${esc(st)}</span></td>${rowRo ? "" : `<td class="l-act">${L.quick && r.data.status !== "Drop" ? `<button class="btn-ghost quick" data-k="${esc(r.key)}">${esc(L.quick.label)}</button> ` : ""}<button class="btn-ghost del" data-k="${esc(r.key)}">Delete</button></td>`}</tr>`; }).join("")}
+    </tbody></table></div>${rowRo ? "" : `<p class="tiny">Tap a row to edit it.</p>`}` : `<div class="card"><p class="muted small">Nothing here yet. Add your first ${L.noun} below.</p></div>`}`);
+  main.appendChild(sec);
+  if (!ro) {
+    const row = editing ? editing.data : (L.noun === "friend" ? { date: iso(new Date()), offer: "Evergreen", joined: "Not yet" } : { status: "Testing" });
+    const f = el("section", "card section", `<div class="row" style="justify-content:space-between"><h3>${editing ? "Edit " + L.noun : "Add a " + L.noun}</h3>${editing ? `<button class="btn-ghost" id="ls-new">Add a new one instead</button>` : ""}</div>
+      <form id="ls-form"><div class="grid-form">${L.fields.map(fd => fieldInput(fd, row, "lf-")).join("")}</div>
+      <div class="form-actions" style="margin-top:14px"><button class="btn" type="submit">${editing ? "Save changes" : "Add " + L.noun}</button></div></form>`);
+    main.appendChild(f);
+    f.querySelector("#ls-new")?.addEventListener("click", () => { S.listEdit[ch] = null; render(); });
+    f.querySelector("#ls-form").addEventListener("submit", e => { e.preventDefault(); saveListRow(ch, editing ? editing.key : pre + Date.now().toString(36), readFields(L.fields, e.target, "lf-")); });
+    sec.querySelectorAll("tr.click").forEach(tr => tr.addEventListener("click", ev => { if (ev.target.closest("button,a")) return; S.listEdit[ch] = tr.dataset.k; render(); f.scrollIntoView({ block: "start" }); }));
+    sec.querySelectorAll(".quick").forEach(b => b.addEventListener("click", () => { const r = rows.find(x => x.key === b.dataset.k); saveListRow(ch, r.key, { ...r.data, [L.quick.field]: n(r.data[L.quick.field]) + 1 }, "Post counted"); }));
+    sec.querySelectorAll(".del").forEach(b => b.addEventListener("click", async () => {
+      if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Tap again to delete"; return; }
+      try { S.me = await rpc("kpi_delete_channel", { p_code: S.code, p_channel: ch, p_key: b.dataset.k }); S.listEdit[ch] = null; toast("Deleted"); render(); } catch (er) { toast("Couldn't delete. Try again.", true); }
+    }));
+  }
+}
+async function saveListRow(ch, key, data, msg) {
+  try { S.me = await rpc("kpi_save_channel", { p_code: S.code, p_channel: ch, p_key: key, p_data: data }); S.listEdit[ch] = null; toast(msg || "Saved"); render(); }
+  catch (er) { toast("Didn't save. Check your connection and try again.", true); }
 }
 async function saveChannel(ch, key, def, form) {
-  const data = {};
-  for (const [k, , , t] of def.fields) { const v = form.querySelector("#cf-" + k).value; if (v === "") continue; data[k] = t === "text" || t === "date" ? v : +v; }
+  const data = readFields(def.fields, form, "cf-");
   try { S.me = await rpc("kpi_save_channel", { p_code: S.code, p_channel: ch, p_key: key, p_data: data }); S.chEdit = null; toast("Saved"); render(); }
   catch (er) { toast("Didn't save. Check your connection and try again.", true); }
 }
@@ -1182,10 +1564,10 @@ function viewMoney(main) {
     { k: "cost_software", label: "Software (£)", help: "CRM, apps, subscriptions", money: true },
     { k: "cost_kit", label: "Kit and equipment (£)", money: true }, { k: "cost_other", label: "Other costs (£)", money: true },
   ];
-  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Once a month · Tier 1 business model</span><h2>Money in, money out</h2></div>
+  const sec = el("section", "section", `<div class="section-head"><div><span class="eyebrow">Once a month · Tier 1 business model</span><h2>Your profit and loss</h2><p class="lead-sub">Add your costs once a month to see what you actually keep.</p></div>
     <select class="select-sm" id="month-sel" aria-label="Month">${opts.map(o => `<option value="${o}" ${o === S.monthSel ? "selected" : ""}>${monthLabel(o)}${(c.months || []).some(x => x.month === o) ? " ✓" : ""}</option>`).join("")}</select></div>
   <form class="card" id="month-form"><div class="form-group">
-    ${sy ? `<p class="muted small">From your CRM for ${monthLabel(S.monthSel)}: <b style="color:var(--fg)">${fmt(n(crm?.revenue), "gbp0")}</b> taken through Stripe and <b style="color:var(--fg)">${fmt(n(crm?.members_end), "int")}</b> paying members. Ad spend comes from your Monday entries. Add everything else below.</p>` : ""}
+    ${sy ? `<p class="muted small">From your CRM for ${monthLabel(S.monthSel)}: <b style="color:var(--fg)">${fmt(n(crm?.revenue), "gbp0")}</b> taken through Stripe and <b style="color:var(--fg)">${fmt(n(crm?.members_end), "int")}</b> paying members. Ad spend comes from what you enter on the Marketing tab. Add everything else below.</p>` : ""}
     <div class="grid-form">${fields.map(f => inputHTML(f, m, c)).join("")}</div></div>
     ${readOnly() ? "" : `<div class="form-group"><div class="form-actions"><button class="btn" type="submit">Save ${monthLabel(S.monthSel)}</button></div></div>`}</form>`);
   main.appendChild(sec);
@@ -1209,7 +1591,7 @@ function viewMoney(main) {
     ${line("Venue hire", cost("cost_venue"), "gbp0")}${line("Coach wages", cost("cost_wages"), "gbp0")}${line("Software", cost("cost_software"), "gbp0")}${line("Kit and equipment", cost("cost_kit"), "gbp0")}${line("Other", cost("cost_other"), "gbp0")}
     ${line("Profit", r => r.profit, "gbp0", "total")}
     <tr><td>Margin</td>${pl.map(r => `<td class="c-${rag("margin", r.margin, T)}">${fmt(r.margin, "pct")}</td>`).join("")}</tr>
-    ${line("Members at month end", r => r.members, "int")}${line("New clients", r => r.s.new_clients, "int")}${line("Cancellations", r => r.s.cancellations, "int")}
+    ${line("Members at month end", r => r.members, "int")}${line("New clients", r => r.joined, "int")}${line("Cancellations", r => r.left, "int")}
     <tr><td>Churn</td>${pl.map(r => `<td class="c-${rag("churn", r.churn, T)}">${fmt(r.churn, "pct")}</td>`).join("")}</tr>
   </tbody></table></div>`));
 }
@@ -1223,7 +1605,7 @@ function viewSettings(main) {
   <form class="card" id="set-form"><div class="form-group"><div class="grid-form">
     <label for="s-name">Your name<input id="s-name" value="${esc(c.name)}" ${dis}></label>
     <label for="s-business">Business name<input id="s-business" value="${esc(c.business)}" ${dis}></label>
-    <label for="s-flow">Booking flow <small>Which CRM flow you run. Changes how your funnel is shown</small><select id="s-flow" ${dis}><option value="call" ${c.flow === "call" ? "selected" : ""}>Call flow (discovery calls)</option><option value="nocall" ${c.flow === "nocall" ? "selected" : ""}>No-call flow (straight to trial)</option></select></label>
+    <label for="s-flow">Booking flow <small>Which flow your CRM runs. Changing it here only changes this dashboard: your CRM needs the other flow's automations published too.${lastFlowChange(c) ? ` Last changed ${shortDate(lastFlowChange(c).at)}.` : ""}</small><select id="s-flow" ${dis}><option value="call" ${c.flow === "call" ? "selected" : ""}>Call flow (discovery calls)</option><option value="nocall" ${c.flow === "nocall" ? "selected" : ""}>No-call flow (straight to trial)</option></select></label>
     ${synced(c) ? "" : `<label for="s-fee">Average monthly fee (£) <small>Read from your CRM once it's connected</small><input id="s-fee" type="number" min="0" step="0.01" value="${esc(c.avg_fee)}" ${dis}></label>`}
     <label for="s-goal">Monthly revenue target (£) <small>The recurring revenue you're aiming for each month</small><input id="s-goal" type="number" min="0" step="50" value="${esc((c.targets || {}).revenue_goal ?? "")}" ${dis}></label>
     ${synced(c) ? "" : `<label for="s-months">Months a client stays <small>Your estimate until the CRM is connected</small><input id="s-months" type="number" min="1" step="0.5" value="${esc(c.avg_months)}" ${dis}></label>`}
@@ -1297,7 +1679,7 @@ function viewAdmin(main) {
   <div class="health">
     ${bigTile("Paying members, all coaches", fmt(totM, "int"), `${fmt(totPrev, "int")} at the end of ${monthShort(prevMonthKey())}`, spark(phT.map(m => m.members)), "none", pctDelta(totM, totPrev, ""))}
     ${bigTile("Coaches' MRR, combined", fmt(sum(x => x.mrr), "gbp0"), `${fmt(sum(x => x.nowM?.revenue), "gbp0")} taken so far this month`, spark(phT.map(m => m.revenue)), "none", pctDelta(sum(x => x.mrr), sum(x => x.prevM ? n(x.prevM.a?.mrr) : null), "£"))}
-    ${bigTile("Need you now", fmt(list.filter(x => x.flags).length, "int"), `of ${list.length} coaches have a red flag`, "", list.some(x => x.flags) ? "bad" : "good")}
+    ${bigTile("Need you now", fmt(list.filter(x => x.flags).length, "int"), `of ${list.length} coach${list.length === 1 ? " has" : "es have"} a red flag`, "", list.some(x => x.flags) ? "bad" : "good")}
     ${bigTile("At risk of leaving you", fmt(atRisk.length, "int"), atRisk.length ? atRisk.map(x => esc(x.c.business || x.c.name)).slice(0, 2).join(", ") + (atRisk.length > 2 ? "…" : "") : "nobody right now", "", atRisk.length ? "bad" : "good")}
   </div>`);
   main.appendChild(sec);
@@ -1363,13 +1745,13 @@ function viewAdmin(main) {
   const cell = (x, k, v) => `<td class="c-${rag(k, v, x.T)}">${fmt(v, k === "cost_per_client" ? "gbp0" : x.T[k].fmt)}</td>`;
   const D4 = x => derive(x.s4, x.c);
   const ts = el("section", "section", `<details class="more" ${S.tableOpen ? "open" : ""} id="tbl"><summary>Every coach in one table</summary>
-  <div class="table-wrap"><table><thead><tr><th>Coach</th><th>Members</th><th>Trend</th><th>MRR</th><th>Net ${monthShort(monthKey(new Date()))}</th><th>Leads 4w</th><th>Called ≤5 min</th><th>Trial show</th><th>Trial → client</th><th>Joined 4w</th><th>Lifetime ROAS</th><th>Dashboard</th><th>Circle</th><th>CRM</th></tr></thead>
+  <div class="table-wrap"><table><thead><tr><th>Coach</th><th>Members</th><th>Trend</th><th>MRR</th><th>Net ${monthShort(monthKey(new Date()))}</th><th>Leads 4w</th><th>Called ≤5 min</th><th>Trial show</th><th>Trial → client</th><th>Joined 4w</th><th>Lifetime ROAS</th><th>Dashboard</th><th>Circle</th><th>Last logged</th><th>CRM</th></tr></thead>
   <tbody>${sorted.map((x, i) => { const D = D4(x); return `<tr class="click" data-i="${i}"><td><b>${esc(x.c.business || x.c.name)}</b></td>
     <td>${fmt(x.members, "int")} ${x.membersPrev !== null && x.members !== null && x.members !== x.membersPrev ? `<span class="${x.members > x.membersPrev ? "up" : "down"}">${x.members > x.membersPrev ? "▲" : "▼"}${Math.abs(x.members - x.membersPrev)}</span>` : ""}</td>
     <td class="spark-cell">${spark(x.hist.map(m => m.members))}</td><td>${fmt(x.mrr, "gbp0")}</td>
     <td class="${x.net > 0 ? "c-good" : x.net < 0 ? "c-bad" : ""}">${x.net === null ? "—" : (x.net > 0 ? "+" : "") + x.net}</td>
     <td>${fmt(x.s4.leads, "int")}</td>${cell(x, "called_5min", D.called_5min)}${cell(x, "show_rate", D.show_rate)}${cell(x, "trial_to_client", D.trial_to_client)}<td>${fmt(x.s4.new_clients, "int")}</td>${cell(x, "lt_roas", x.D12.lt_roas)}
-    <td>${x.c.last_seen ? ago(x.c.last_seen) : "never"}</td><td>${x.c.circle_last_seen ? ago(x.c.circle_last_seen) : x.c.circle_status === "not found in Circle" ? "not found" : "—"}</td><td>${crmStatus(x.c)}</td></tr>`; }).join("")}</tbody></table></div></details>`);
+    <td>${x.c.last_seen ? ago(x.c.last_seen) : "never"}</td><td>${x.c.circle_last_seen ? ago(x.c.circle_last_seen) : x.c.circle_status === "not found in Circle" ? "not found" : "—"}</td><td>${(d => d ? parseISO(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "never")(lastLogged(x.c))}</td><td>${crmStatus(x.c)}</td></tr>`; }).join("")}</tbody></table></div></details>`);
   main.appendChild(ts);
   ts.querySelector("#tbl").addEventListener("toggle", e => { S.tableOpen = e.target.open; });
   ts.querySelectorAll("tr.click").forEach(tr => tr.addEventListener("click", () => { S.viewing = sorted[+tr.dataset.i].c; S.tab = "dash"; render(); scrollTo(0, 0); }));
