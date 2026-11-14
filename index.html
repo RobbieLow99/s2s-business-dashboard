@@ -2700,19 +2700,68 @@ function viewS2S(main) {
   main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>Full breakdown</h2><p class="lead-sub">Month by month, and who's joined and left.</p></div></div>
     <div class="table-wrap card"><table><thead><tr><th>Month</th><th>Plans</th><th>WhatsApp</th><th>Rebilling</th><th>Total</th><th>Refunds</th><th>Stripe fees</th><th>Net</th></tr></thead><tbody>${[...shown].reverse().map(m => `<tr><td>${monthLabel(m.month + "-01")}</td><td>${fmt(m.plan - n(m.whatsapp), "gbp0")}</td><td>${m.whatsapp ? fmt(m.whatsapp, "gbp0") : "—"}</td><td>${fmt(m.usage, "gbp0")}</td><td><b>${fmt(m.gross, "gbp0")}</b></td><td>${m.refunds ? fmt(m.refunds, "gbp0") : "—"}</td><td>${fmt(m.fees, "gbp0")}</td><td>${fmt(m.gross - m.refunds - m.fees, "gbp0")}</td></tr>`).join("")}</tbody></table></div>`));
 
+  s2sCostsSection(main, d, now.mrr + whatsapp + n(lastM.usage));
+
   // joined and left in the period, one row per client per day
   const moves = Object.values([...joined.map(s => ({ s, day: s.start, sign: 1 })), ...left.map(s => ({ s, day: s.end, sign: -1 }))].reduce((a, x) => { const k = x.s.client + x.day + x.sign; a[k] = a[k] || { client: x.s.client, day: x.day, sign: x.sign, products: [], amount: 0, reason: x.s.reason }; a[k].products.push(x.s.product); a[k].amount += n(x.s.amount); return a; }, {})).sort((a, b) => b.day.localeCompare(a.day));
   main.appendChild(el("section", "card section growth-card cancels-card", `<div class="section-head"><div><h3>Joined and left</h3><p class="lead-sub">${cap(label)}: ${gbpCh(sumA(joined))} joined, ${gbpCh(-sumA(left))} left.</p></div></div>${moves.length ? `<div class="table-wrap"><table><thead><tr><th>Client</th><th></th><th>Product</th><th>Date</th><th>MRR</th><th>Why they left</th></tr></thead><tbody>${moves.map(x => `<tr><td>${esc(x.client)}</td><td><span class="pill ${x.sign > 0 ? "good" : "bad"}">${x.sign > 0 ? "Joined" : "Left"}</span></td><td>${esc(x.products.join(" + "))}</td><td>${shortDate(x.day)}</td><td>${gbpCh(x.sign * x.amount)}</td><td>${x.sign < 0 ? esc(x.reason || "—") : ""}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted small">Nobody joined or left ${inP}.</p>`}`));
   if (d.off_stripe?.length) main.appendChild(el("p", "tiny live-note", `In MRR but billed outside Stripe: ${d.off_stripe.map(x => `${esc(x.client)} ${fmt(x.amount, "gbp0")}`).join(", ")}.`));
 }
+function s2sCostsSection(main, d, allIn) {
+  const C = d.costs, M = s2sCostMonths(d).slice(-3);
+  if (!C || !M.length) return;
+  const mon = m => monthShort(m + "-01"), pct = v => v === null ? "—" : Math.round(v * 100) + "%", g = v => fmt(v, "gbp0");
+  const tot = k => M.reduce((a, m) => a + m[k], 0), rev3 = tot("revenue"), gm3 = rev3 ? tot("gp") / rev3 : null, nm3 = rev3 ? tot("profit") / rev3 : null;
+  // right now: this month's recurring revenue, ads at the last 28 days' pace, everything else at the regular monthly figure
+  const ads = s2sMetaByMonth(d), cut = iso(addDays(new Date(), -28)), ad28 = (d.meta?.ads || []).reduce((a, x) => a + Object.entries(x.days || {}).filter(([day]) => day > cut).reduce((b, [, v]) => b + n(v[0]), 0), 0);
+  const feeRate = rev3 ? tot("fees") / rev3 : 0.03, R = C.regular || {}, grpSum = gr => C.lines.filter(l => l.group === gr).reduce((a, l) => a + n(R[l.key]), 0);
+  const nowAds = ad28 * 30.44 / 28, nowFees = allIn * feeRate, nowDel = grpSum("delivery") + nowFees, nowAcq = grpSum("acquisition") + nowAds, nowOv = grpSum("overhead");
+  const nowGp = allIn - nowDel, nowProfit = nowGp - nowAcq - nowOv;
+  const N = { revenue: allIn, fees: nowFees, ads: nowAds, delivery: nowDel, acquisition: nowAcq, overhead: nowOv, gp: nowGp, profit: nowProfit, gm: allIn ? nowGp / allIn : null, nm: allIn ? nowProfit / allIn : null, row: R, est: [] };
+  const cols = [...M, N], head = [...M.map(m => mon(m.month)), "Now (est.)"];
+  const line = (name, f, cls = "") => `<tr class="${cls}"><td>${name}</td>${cols.map(c => `<td>${f(c)}</td>`).join("")}</tr>`;
+  const lines = gr => C.lines.filter(l => l.group === gr && cols.some(c => n(c.row[l.key]))).map(l => line(`<span class="tiny muted">&nbsp;&nbsp;${esc(l.name)}</span>`, c => n(c.row[l.key]) ? g(n(c.row[l.key])) + (c.est.includes(l.key) ? "*" : "") : "—")).join("");
+  const sub = (name, k) => line(`<span class="tiny muted">&nbsp;&nbsp;${name}</span>`, c => g(c[k]));
+  const oneOffs = (C.one_offs || []).filter(o => M.some(m => m.month === o.month));
+  main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>Costs and margin</h2><p class="lead-sub">What it costs to serve your clients and to win new ones. Ads and Stripe fees update themselves.</p></div></div>
+    <section class="since ret-strip s2s-funnel"><div><b>${pct(gm3)}</b><span>Gross margin</span><small>${mon(M[0].month)}–${mon(M[M.length - 1].month)}: what's left after serving clients</small></div><div><b>${pct(nm3)}</b><span>Net margin</span><small>After ads, setter and overheads too</small></div><div><b>${g(tot("profit") / M.length)}</b><span>Profit a month</span><small>Average, before your pay and tax</small></div><div class="${nowProfit > 0 ? "ros-cell up" : ""}"><b>${g(nowProfit)}</b><span>Profit right now</span><small>${pct(N.nm)} net · ads at ${g(nowAds / 30.44)}/day</small></div></section>
+    <div class="table-wrap card"><table><thead><tr><th></th>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>
+      ${line("<b>Revenue</b>", c => `<b>${g(c.revenue)}</b>`)}
+      ${line("Serving clients", c => g(c.delivery))}${lines("delivery")}${sub("Stripe fees", "fees")}
+      ${line("Gross profit", c => `${g(c.gp)} <span class="tiny muted">${pct(c.gm)}</span>`, "total")}
+      ${line("Winning clients", c => g(c.acquisition))}${sub("Meta ads", "ads")}${lines("acquisition")}
+      ${line("Overheads", c => g(c.overhead))}${lines("overhead")}
+      ${line("Profit before your pay", c => `${g(c.profit)} <span class="tiny muted">${pct(c.nm)}</span>`, "total")}
+    </tbody></table></div>
+    <p class="tiny live-note">${M.some(m => m.est.length) ? "* Estimate. " : ""}Revenue is everything through Stripe less refunds. Not counted: your salary and dividends, money moved to the tax pot, ${oneOffs.length ? `one-offs (${oneOffs.map(o => `${esc(o.name)} ${g(o.amount)} in ${mon(o.month)}`).join(", ")}), ` : ""}and anything that isn't S2S. "Now" uses this month's recurring revenue and your regular monthly costs. Costs from: ${esc(C.source || "bank statement")}.</p>`));
+}
 /* ---- admin: S2S advertising (own CRM funnel + Stripe joins + typed ad spend until Meta is connected) ---- */
 /* What a client is worth in PROFIT (LTGP), used for every ROAS and spend limit on the Advertising tab.
    Prices went up from Sept 2026, so it uses NEW clients only (first ever subscription on/after 1 Sep):
    their average monthly payment × a planning stay of PLAN_STAY months × gross margin.
-   Gross margin from the October 2026 bank statement: revenue £13,868 less delivery costs (Stripe fees ~£458,
-   GHL usage £1,443, GHL agency plan £453, software £357) = 80%. Ads and the setter are acquisition costs, not delivery.
+   Gross margin = the last 3 months in kpi.s2s.data.costs (s2sGrossMargin): Aug–Oct 2026 = 77%.
+   Ads and the setter are acquisition costs, not delivery.
    The stay is a planning figure until the Sept cohort is old enough; the observed stay so far is shown beside it. */
-const GROSS_MARGIN = 0.80, SETTER_MONTHLY = 1000, PLAN_STAY = 5, COHORT_FROM = "2026-09-01";
+const GROSS_MARGIN_FALLBACK = 0.77, SETTER_MONTHLY = 1000, PLAN_STAY = 5, COHORT_FROM = "2026-09-01";
+/* S2S costs and margin, month by month. Costs come from kpi.s2s.data.costs (sorted from the bank statement with Robbie);
+   ads come from the Meta sync and Stripe fees from the Stripe sync, so those two update themselves.
+   delivery = cost to serve clients (gross margin); acquisition = ads + setter + ManyChat; overhead = everything else.
+   Owner pay (salary, dividends), the tax pot and one-offs are left out. */
+function s2sMetaByMonth(d) { const o = {}; (d.meta?.ads || []).forEach(a => Object.entries(a.days || {}).forEach(([day, v]) => { const m = day.slice(0, 7); o[m] = (o[m] || 0) + n(v[0]); })); return o; }
+function s2sCostMonths(d) {
+  const C = d?.costs; if (!C?.months) return [];
+  const ads = s2sMetaByMonth(d), grp = g => C.lines.filter(l => l.group === g);
+  return Object.keys(C.months).sort().map(month => {
+    const row = C.months[month], rev = (d.monthly || []).find(m => m.month === month);
+    if (!rev || rev.partial) return null;
+    const sum = g => grp(g).reduce((a, l) => a + n(row[l.key]), 0);
+    const revenue = n(rev.gross) - n(rev.refunds), fees = n(rev.fees), ad = n(ads[month]);
+    const delivery = sum("delivery") + fees, acquisition = sum("acquisition") + ad, overhead = sum("overhead");
+    const gp = revenue - delivery, profit = gp - acquisition - overhead;
+    return { month, row, revenue, fees, ads: ad, delivery, acquisition, overhead, gp, profit, gm: revenue ? gp / revenue : null, nm: revenue ? profit / revenue : null, est: C.estimates?.[month] || [] };
+  }).filter(Boolean);
+}
+function s2sGrossMargin(d) { const M = s2sCostMonths(d).slice(-3), r = M.reduce((a, m) => a + m.revenue, 0); return r ? M.reduce((a, m) => a + m.gp, 0) / r : GROSS_MARGIN_FALLBACK; }
 function s2sWorth(subs) {
   const today = iso(new Date()), mo = (a, b) => Math.max(0, (parseISO(b) - parseISO(a)) / (30.44 * 864e5)), by = {};
   subs.forEach(s => (by[s.client] = by[s.client] || []).push(s));
@@ -2725,8 +2774,8 @@ function s2sWorth(subs) {
   if (!cohort.length) return { worth: null, cap: null };
   const arpu = cohort.reduce((a, c) => a + c.monthly, 0) / cohort.length, lost = cohort.filter(c => c.gone).length;
   const clientMonths = cohort.reduce((a, c) => a + c.months, 0), seenStay = lost && clientMonths ? clientMonths / lost : null;
-  const ltv = arpu * PLAN_STAY, worth = ltv * GROSS_MARGIN;
-  return { worth, cap: Math.round(worth / 3 / 10) * 10, arpu, stay: PLAN_STAY, ltv, margin: GROSS_MARGIN, n: cohort.length, lost, seenStay, cohort };
+  const gm = s2sGrossMargin(S.s2s), ltv = arpu * PLAN_STAY, worth = ltv * gm;
+  return { worth, cap: Math.round(worth / 3 / 10) * 10, arpu, stay: PLAN_STAY, ltv, margin: gm, n: cohort.length, lost, seenStay, cohort };
 }
 const setterCost = (from, to) => { const a = from < SETTER_START ? SETTER_START : from; return a >= to ? 0 : SETTER_MONTHLY * (parseISO(to) - parseISO(a)) / (30.44 * 864e5); };
 const ADS_SEG = [["7d", "7 days"], ["4w", "28 days"], ["sep", "Since 1 Sep"], ["13w", "3 months"], ["26w", "6 months"], ["52w", "12 months"]], SETTER_START = "2026-09-01";
