@@ -866,6 +866,18 @@ function lastDaysRows(rows, c, days) {
   return [has(spend) ? { ...r, ad_spend: spend } : r];
 }
 const last7Rows = (rows, c) => lastDaysRows(rows, c, 7);
+// a show rate is only trusted once most appointments carry a showed / no-show mark (all history, not just since the start date)
+function markedShare(rows, k) { const a = k === "call_show_rate" ? ["calls_attended", "calls_noshow", "calls_booked"] : ["trials_attended", "trials_noshow", "trials_booked"], t = x => rows.reduce((v, w) => v + n(w[x]), 0), b = t(a[2]); return b >= 3 ? (t(a[0]) + t(a[1])) / b : 1; }
+const showUnreliable = (rows, k) => /show_rate/.test(k) && markedShare(rows, k) < 0.6;
+// the day the coach first opened their dashboard: their habits (calling, marking) only count from here. Money keeps its full history.
+const startedOn = c => (c?.started_at || c?.sync_info?.tracking_from || "").slice(0, 10) || null;
+function sinceStart(c, days) { // daily totals from the later of the start date and `days` ago (null if the start date is older than that)
+  const st = startedOn(c), from = iso(addDays(new Date(), -(days - 1))), dw = c.sync_info?.daily_w;
+  if (!st || st <= from || !dw) return null;
+  const first = iso(addDays(parseISO(st), 1)), r = { day: first }; // from the first full day after they started, so leads that came in before they'd seen it don't count
+  for (const [d, x] of Object.entries(dw)) if (d >= first) for (const [k, v] of Object.entries(x)) r[k] = (r[k] || 0) + n(v);
+  return r;
+}
 
 const COST_KEYS = ["cost_venue", "cost_wages", "cost_software", "cost_kit", "cost_other"];
 const usualCosts = c => { const u = (c.targets || {}).costs; return u && typeof u === "object" && COST_KEYS.some(f => has(u[f])) ? u : null; }; // set once in Settings
@@ -915,27 +927,38 @@ function issues(c) {
   const callsAfter = sum14(info.daily, "calls_booked", fc?.at), settled = !fc || fc.at <= iso(addDays(new Date(), -14));
   if (synced(c) && c.flow === "nocall" && callsAfter >= 2) out.push({ sev: "bad", key: "flowmismatch", title: `You're set to no-call, but ${callsAfter} discovery calls have been booked`, body: "Last 14 days. Either your CRM is still running the call flow or this setting is wrong. Check which automations are published in your CRM, then tell Robbie so he can match your dashboard. Until they match, your funnel won't add up.", msg: `${fn}, your dashboard is set to the no-call flow but ${callsAfter} discovery calls have been booked in the last 2 weeks. Check which automations are live in your CRM and get the two matching, or your funnel won't add up.` });
   else if (synced(c) && c.flow !== "nocall" && settled && callsAfter === 0 && sum14(info.daily_w, "trials_held") >= 5) out.push({ sev: "bad", key: "flowmismatch", title: "You're set to the call flow, but trials are being booked with no discovery calls", body: "Last 14 days. If you've moved to no-call, tell Robbie so he can switch your dashboard. If you haven't, check your discovery calendar is working. Until they match, your funnel won't add up.", msg: `${fn}, your dashboard is set to the call flow but you've had trials booked and no discovery calls in the last 2 weeks. If you've moved to no-call, tell me and I'll switch your dashboard. If not, check your discovery calendar.` });
-  if (info.missed_calls_14d > 0) out.push({ sev: info.missed_calls_14d >= 3 ? "bad" : "ok", key: "missed", title: `${info.missed_calls_14d} parent call${info.missed_calls_14d > 1 ? "s" : ""} to your business number still need calling back`, body: "Last 14 days. These are people ready to buy. Ring them back from the HighLevel app and they'll clear from this list.", msg: `${fn}, ${info.missed_calls_14d} parent${info.missed_calls_14d > 1 ? "s" : ""} rang your business number in the last fortnight and nobody picked up. That's people ready to buy. Get the app notifications on and call them back today.` });
-  if (c.flow !== "nocall" && info.calls_tracked && info.leads_14d >= 3 && n(info.uncalled_leads_14d) / info.leads_14d >= 0.5) out.push({ sev: "bad", key: "uncalled", title: `${info.uncalled_leads_14d} of ${info.leads_14d} new leads haven't been called from the CRM`, body: "Last 14 days. The standard is every new lead called from the HighLevel app the minute the alert lands. Calls from your own phone don't count, so use the app.", msg: `${fn}, ${info.uncalled_leads_14d} of your ${info.leads_14d} leads in the last 2 weeks didn't get a call from the CRM. Call them from the HighLevel app the second the alert comes in. It's the cheapest win in your business.` });
+  // calls, missed calls and marking only count from the day the coach first opened the dashboard (sync: tracking_from)
+  const tl = has(info.tracked_leads_14d) ? n(info.tracked_leads_14d) : n(info.leads_14d), startDay = startedOn(c), startedRecently = startDay && startDay > iso(addDays(new Date(), -14));
+  const winTxt = startedRecently ? `Since you started your dashboard on ${shortDate(startDay)}.` : "Last 14 days.";
+  if (info.missed_calls_14d > 0) out.push({ sev: info.missed_calls_14d >= 3 ? "bad" : "ok", key: "missed", title: `${info.missed_calls_14d} parent call${info.missed_calls_14d > 1 ? "s" : ""} to your business number still need calling back`, body: winTxt + " These are people ready to buy. Ring them back from the HighLevel app and they'll clear from this list.", msg: `${fn}, ${info.missed_calls_14d} parent${info.missed_calls_14d > 1 ? "s" : ""} rang your business number in the last fortnight and nobody picked up. That's people ready to buy. Get the app notifications on and call them back today.` });
+  if (c.flow !== "nocall" && info.calls_tracked && tl >= 3 && n(info.uncalled_leads_14d) / tl >= 0.5) out.push({ sev: "bad", key: "uncalled", title: `${info.uncalled_leads_14d} of ${tl} new leads haven't been called from the CRM`, body: winTxt + " The standard is every new lead called from the HighLevel app the minute the alert lands. Calls from your own phone don't count, so use the app.", msg: `${fn}, ${info.uncalled_leads_14d} of your ${info.leads_14d} leads in the last 2 weeks didn't get a call from the CRM. Call them from the HighLevel app the second the alert comes in. It's the cheapest win in your business.` });
   if (c.flow === "nocall" && info.daily_w) {
     const held = sum14(info.daily_w, "trials_held"), unconf = Math.max(0, held - sum14(info.daily_w, "trials_booked") - sum14(info.daily_w, "trials_cancelled"));
     if (held >= 3 && unconf / held >= 0.5) out.push({ sev: "bad", key: "unconfirmed", title: `${unconf} of ${held} trial spots held haven't been confirmed`, body: "Last 14 days. A held spot isn't a booked trial until the parent says YES. Chase them today and free up any spot that won't confirm.", msg: `${fn}, ${unconf} of the ${held} trial spots held in the last 2 weeks still haven't been confirmed. A held spot isn't a booked trial until the parent says YES. Chase them today.` });
   }
   const unm = n(info.unmarked_calls) + n(info.unmarked_trials);
-  if (unm > 0) out.push({ sev: unm >= 5 ? "bad" : "ok", key: "unmarked", title: `${unm} appointment${unm > 1 ? "s" : ""} not marked showed or no-show`, body: `${n(info.unmarked_calls)} call${n(info.unmarked_calls) === 1 ? "" : "s"} and ${n(info.unmarked_trials)} trial${n(info.unmarked_trials) === 1 ? "" : "s"} in the last 60 days. Until they're marked, your show rates are guesses. Mark them in the calendar.`, msg: `${fn}, you've got ${unm} calls and trials not marked showed or no-show. Until they're marked your numbers are guessing. Ten minutes in the calendar tonight sorts it.` });
+  if (unm > 0) out.push({ sev: unm >= 5 ? "bad" : "ok", key: "unmarked", title: `${unm} appointment${unm > 1 ? "s" : ""} not marked showed or no-show`, body: `${n(info.unmarked_calls)} call${n(info.unmarked_calls) === 1 ? "" : "s"} and ${n(info.unmarked_trials)} trial${n(info.unmarked_trials) === 1 ? "" : "s"} ${startDay && startDay > iso(addDays(new Date(), -60)) ? `since you started your dashboard on ${shortDate(startDay)}` : "in the last 60 days"}. Until they're marked, your show rates are guesses. Mark them in the calendar.`, msg: `${fn}, you've got ${unm} calls and trials not marked showed or no-show. Until they're marked your numbers are guessing. Ten minutes in the calendar tonight sorts it.` });
   if (info.past_due > 0) out.push({ sev: "ok", key: "pastdue", title: `${info.past_due} member payment${info.past_due > 1 ? "s" : ""} failed and still unpaid`, body: "Chase it today: Payments › Subscriptions › send a card update link.", msg: `${fn}, ${info.past_due} member payment${info.past_due > 1 ? "s have" : " has"} failed and not been paid. Chase it today before it turns into a cancellation.` });
+  // members leaving: money already walking out the door, so it ranks with the other money items
+  if (synced(c)) {
+    const r28 = lastDaysRows(rows, c, 28) || inRange(rows, R.from, R.to), left = r28.reduce((a, w) => a + n(w.cancellations), 0), lostFees = r28.reduce((a, w) => a + n(w.fees_left), 0), base = n(info.members_now) + left;
+    if (left >= 3 && base && left / base >= 0.08) {
+      const pct = Math.round(left / base * 100);
+      out.push({ sev: "bad", key: "churn", lost: lostFees, title: `${left} members left in the last 28 days (−${fmt(lostFees, "gbp0")} a month)`, body: `That's ${pct}% of your members gone in a month. Message every one of them this week: ask why they left and offer a way back. They're listed under Client growth › Recent cancellations.`, msg: `${fn}, ${left} members left in the last 28 days, ${pct}% of your members and ${fmt(lostFees, "gbp0")} a month gone. Message every one this week, find out why, and offer them a way back. Then fix whatever they tell you.` });
+    }
+  }
   const order = (c.flow === "nocall" ? ["hold_rate", "confirm_rate"] : ["call_book_rate", "call_show_rate", "call_to_trial"]).concat(["show_rate", "trial_to_client", "cpl", "cost_per_client"]);
   for (const k of [...order].sort((a, b) => rateWorth(b) - rateWorth(a))) { // of the rates under target, the one costing the most
     if (rag(k, D[k], T) !== "bad") continue;
-    if ((k === "call_show_rate" || k === "show_rate") && unm >= 5) continue; // unmarked appointments make these unreliable
+    if ((k === "call_show_rate" || k === "show_rate") && (unm >= 5 || showUnreliable(inRange(rows, R.from, R.to), k))) continue; // unmarked appointments make these unreliable
     out.push({ sev: "bad", key: k, title: `${T[k].label}: ${fmt(D[k], T[k].fmt)} (target ${tgt(T[k])})`, body: ADVICE[k], msg: `${fn}, your ${T[k].label.toLowerCase()} is ${fmt(D[k], T[k].fmt)} over the last 4 weeks against a target of ${tgt(T[k])}. ${ADVICE[k]}` });
     break;
   }
   const lw = rows.find(w => w.week_start === iso(lastMonday()));
   out.adSpendMissing = !lw || !has(lw.ad_spend);
   // setup first (nothing's right without it), then money at stake, then unmarked appointments, then funnel rates
-  const tier = i => ["sync", "calendars", "flowmismatch"].includes(i.key) ? 0 : ["missed", "uncalled", "unconfirmed", "pastdue"].includes(i.key) ? 1 : i.key === "unmarked" ? 2 : 3;
-  const worth = i => ({ pastdue: n(info.past_due_fees) || n(info.past_due) * fee, missed: n(info.missed_calls_14d) * conv * ltv, uncalled: n(info.uncalled_leads_14d) * conv * ltv, unconfirmed: n(info.open?.unconfirmed?.length) * trialConv * ltv }[i.key] || 0);
+  const tier = i => ["sync", "calendars", "flowmismatch"].includes(i.key) ? 0 : ["missed", "uncalled", "unconfirmed", "pastdue", "churn"].includes(i.key) ? 1 : i.key === "unmarked" ? 2 : 3;
+  const worth = i => ({ churn: n(i.lost) * Math.min(12, n(retention(c).months) || 6), pastdue: n(info.past_due_fees) || n(info.past_due) * fee, missed: n(info.missed_calls_14d) * conv * ltv, uncalled: n(info.uncalled_leads_14d) * conv * ltv, unconfirmed: n(info.open?.unconfirmed?.length) * trialConv * ltv }[i.key] || 0);
   out.sort((a, b) => tier(a) - tier(b) || worth(b) - worth(a));
   out.forEach(i => { i.worth = tier(i) === 0 ? 1e7 : tier(i) === 3 ? rateWorth(i.key) : worth(i); });
   return out;
@@ -1179,7 +1202,8 @@ function viewDash(main) {
   main.appendChild(pageBar); onSeg(pageBar, "page-p", v => { S.period = v; render(); });
   const dMem = P.members, sign = v => v >= 0 ? "+" : "−", tone = v => v > 0 ? "up" : v < 0 ? "down" : "";
   const spend12 = P.cur.spend_weeks ? P.cur.ad_spend : null;
-  const back = spend12 ? P.cur.new_clients * adMaths(c).ltgp / spend12 : null;
+  // only members the CRM says came from ads count (same rule as the Paid ads tab); without lead source we can't tell, so no figure
+  const paidSrc = crmSrc(c, "paid", periodRange(S.period)), back = spend12 && paidSrc ? paidSrc.joined * adMaths(c).ltgp / spend12 : null;
   const inP = P.label === "this week" ? "this week" : "in the " + P.label, gbpCh = v => (v >= 0 ? "+" : "−") + fmt(Math.abs(v), "gbp0");
   const card = (label, value, change, cls, foot) => `<div class="${cls}"><span class="v-l">${label}</span><b>${value}</b>${change ? `<em>${change}</em>` : ""}${foot ? `<small>${foot}</small>` : ""}</div>`;
   const profitBit = M.lastFull ? `Profit ${fmt(M.lastFull.profit, "gbp0")} in ${monthShort(M.lastFull.month)}` : readOnly() ? "" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add costs to see profit</a>`;
@@ -1195,7 +1219,7 @@ function viewDash(main) {
     card("Monthly recurring revenue", fmt(sy ? M.mrr : mrrStale ? lastRev.revenue : M.nowM?.revenue, "gbp0"), mrrD === null ? "" : `${gbpCh(mrrD)} net ${mrrIn}`, mrrD === null ? "" : toneOf(mrrD), mrrStale ? `From ${monthShort(lastRev.month)}` : ""),
     card("Paying members", fmt(memStale ? lastMem.members : M.members, "int"), `${P.members > 0 ? "+" : ""}${P.members} net ${inP}`, toneOf(P.members), memStale ? `At the end of ${monthShort(lastMem.month)}` : ""),
     back === null && adminEx() ? card("Return on ad spend", '4.2x <span class="ex">example</span>', "", "up", "£4.20 back for every £1 · example until ad spend is entered")
-      : card("Return on ad spend", back === null ? "—" : back.toFixed(1) + "x", "", roasR, back === null ? (readOnly() ? "No ad spend entered yet" : `<a href="#" id="go-spend" style="color:var(--accent-2)">Add your ad spend to see this</a>`) : `£${back.toFixed(2)} profit back for every £1 · lifetime · ${P.label}`),
+      : card("Return on ad spend", back === null ? "—" : back.toFixed(1) + "x", "", roasR, back === null ? (spend12 && !paidSrc ? "Needs lead source switched on in your CRM, so only members from ads count" : readOnly() ? "No ad spend entered yet" : `<a href="#" id="go-spend" style="color:var(--accent-2)">Add your ad spend to see this</a>`) : `£${back.toFixed(2)} profit back for every £1 · lifetime · ${P.label}`),
   ].join("");
   main.appendChild(el("section", `verdict ${V.cls}`, `<div class="v-main">
     <div class="v-figs">${row}</div>
@@ -1218,9 +1242,11 @@ function viewDash(main) {
 
   // 3. fix this first
   const top3 = iss.slice(0, 3);
-  main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>This week's priorities</h2><p class="lead-sub">Always live, ranked by money at stake. Clears as you go.</p></div></div>
+  main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>This week's priorities</h2><p class="lead-sub">Always live, ranked by money at stake. Clears as you go.${startedOn(c) && startedOn(c) > iso(addDays(new Date(), -60)) ? ` Calls and appointments count from ${shortDate(startedOn(c))}, the day you started.` : !startedOn(c) ? " Calls and appointments start counting the day the dashboard is first opened." : ""}</p></div></div>
     ${clearedProgress(M)}${top3.length ? `<div class="prio-list">${top3.map((p, i) => `<div class="hero-fix ${p.sev} ${i ? "small" : ""}"><span class="prio-n">${i + 1}</span><div><h2>${esc(p.title)}</h2><p>${esc(p.body)}</p>${crmLink(M.c, p.key) ? `<a class="crm-link" href="${crmLink(M.c, p.key)}" target="_blank" rel="noopener">${crmLabel(p.key)}</a>` : ""}</div></div>`).join("")}</div>`
-      : `<div class="hero-fix good"><div><h2>Nothing's leaking right now</h2><p>Every step is on target for the last 4 weeks. This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div></div>`}`));
+      : (() => { const R4 = periodRange("4w"), r4 = inRange(rows, R4.from, R4.to), uk = ["call_show_rate", "show_rate"].filter(k => (k !== "call_show_rate" || c.flow !== "nocall") && showUnreliable(r4, k));
+        return uk.length ? `<div class="hero-fix ok"><div><h2>Nothing urgent right now</h2><p>One thing can't be judged yet: most of your ${uk.includes("call_show_rate") ? "calls" : "trials"} aren't marked showed or no-show in your CRM. Mark each one in the calendar on the day and your show rate gets checked here.</p></div></div>`
+          : `<div class="hero-fix good"><div><h2>Nothing's leaking right now</h2><p>Every step is on target for the last 4 weeks. This is when you scale: raise the ad budget 20% at a time and watch cost per lead.</p></div></div>`; })()}`));
 
   // 5. two charts that tell the story
   const firstM = M.months.findIndex(m => n(m.revenue) > 0 || n(m.members) > 0), gHist = M.months.slice(Math.max(firstM < 0 ? 0 : firstM, M.months.length - ({ "26w": 6, "52w": 12 }[S.period] || 3)));
@@ -1327,7 +1353,8 @@ function detailFunnel(box, M) {
   steps.push({ l: "Trials attended", f: "trials_attended", k: "show_rate" }, { l: "New clients from leads", f: "funnel_clients", k: "trial_to_client" });
   // biggest leak = the step furthest below its target
   let leak = null, worst = 0;
-  for (const s of steps) if (s.k && D[s.k] !== null) { const m = T[s.k], gap = (m.good - D[s.k]) / m.good; if (gap > worst) { worst = gap; leak = s.k; } }
+  const unrel = k => showUnreliable(inRange(M.rows, P.from, P.to), k);
+  for (const s of steps) if (s.k && D[s.k] !== null && !unrel(s.k)) { const m = T[s.k], gap = (m.good - D[s.k]) / m.good; if (gap > worst) { worst = gap; leak = s.k; } }
   const leakStep = steps.find(s => s.k && s.k === leak);
   const topV = Math.max(1, ...steps.map(s => cur[s.f]));
   const SP = speedStrip(M);
@@ -1337,7 +1364,7 @@ function detailFunnel(box, M) {
     return `<div class="f-row ${isLeak ? "leak" : ""}"><span class="f-label">${s.l}${prev ? ` <span class="f-delta">${delta(now, prev[s.f], "high")}</span>` : ""}</span><div class="f-track"><div class="f-bar" style="width:${Math.min(100, now / topV * 100)}%"></div></div><span class="f-val">${fmt(now, "int")}</span>
       <span class="f-rate">${s.k ? `<span class="pill ${r}" title="Target ${esc(tgt(T[s.k]))}">${v > 100 ? "100%+" : fmt(v, "pct")} ${STEP_WORDS[s.k] || ""}</span>` : ""}</span></div>
 `;
-  }).join("")}</div>${leakStep && M.iss[0]?.key !== leakStep.k ? `<div class="leak-note"><b>Fix this first: ${esc(T[leakStep.k].label)} ${fmt(D[leakStep.k], "pct")} (target ${fmt(T[leakStep.k].good, "pct")}).</b> ${esc(ADVICE[leakStep.k])}${/show_rate/.test(leakStep.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments unmarked, so it may be higher.</i>` : ""}</div>` : ""}</div>${SP}`;
+  }).join("")}</div>${leakStep && M.iss[0]?.key !== leakStep.k ? `<div class="leak-note"><b>Fix this first: ${esc(T[leakStep.k].label)} ${fmt(D[leakStep.k], "pct")} (target ${fmt(T[leakStep.k].good, "pct")}).</b> ${esc(ADVICE[leakStep.k])}${/show_rate/.test(leakStep.k) && n(M.info.unmarked_calls) + n(M.info.unmarked_trials) >= 5 ? ` <i>${n(M.info.unmarked_calls) + n(M.info.unmarked_trials)} appointments unmarked, so it may be higher.</i>` : ""}</div>` : ""}${steps.some(x => x.k && unrel(x.k)) ? `<p class="tiny ret-note">Most of your ${steps.some(x => x.k === "call_show_rate" && unrel(x.k)) ? "calls" : "trials"} aren't marked showed or no-show in your CRM, so that show rate isn't judged yet. Mark them in the calendar and it will be.</p>` : ""}</div>${SP}`;
 }
 function detailYear(box, M) {
   const { T, sy } = M;
@@ -1353,16 +1380,21 @@ function detailYear(box, M) {
 }
 function speedStrip(M) {
   const { c, T, rows, info } = M;
-  const P = pagePeriod(M, S.period), R = P, cur = P.cur, D = derive(cur, c);
+  const P = pagePeriod(M, S.period), R = P;
+  let cur = P.cur, D = derive(cur, c);
   const mins = rows.filter(w => w.week_start >= iso(R.from) && w.week_start <= iso(R.to) && has(w.median_mins_to_call)).map(w => +w.median_mins_to_call).sort((a, b) => a - b);
-  const med = mins.length ? mins[Math.floor(mins.length / 2)] : null;
+  let med = mins.length ? mins[Math.floor(mins.length / 2)] : null;
   if (!info.calls_tracked) return "";
-  if (c.flow === "nocall") return `<div class="card speed-strip"><div><span class="eyebrow">Missed calls</span><p class="tiny">Parents ringing your business number</p></div>${stat("missed parent calls", fmt(n(info.missed_total_14d ?? info.missed_calls_14d), "int"), "last 14 days", n(info.missed_total_14d ?? info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_total_14d ?? info.missed_calls_14d) ? "ok" : "good")}</div>`;
-  return `<div class="card speed-strip"><div><span class="eyebrow">Speed to lead</span><p class="tiny">Calls from the HighLevel app</p></div>
+  if (!startedOn(c)) return `<div class="card speed-strip"><div><span class="eyebrow">${c.flow === "nocall" ? "Missed calls" : "Speed to lead"}</span><p class="tiny">Starts counting the day ${esc(firstName(c) || "the coach")} first opens the dashboard</p></div></div>`;
+  const ss = sinceStart(c, { "7d": 7, "4w": 28 }[S.period] || 9999), ssTxt = ss ? `since ${shortDate(ss.day)}` : "";
+  if (ss) { cur = { ...cur, leads: n(ss.leads), leads_called: n(ss.leads_called), called_5min: n(ss.called_5min) }; D = derive(cur, c); med = null; }
+  const missedN = ss ? n(info.missed_calls_14d) : n(info.missed_total_14d ?? info.missed_calls_14d), missedTxt = ss ? ssTxt + ", not called back" : "last 14 days";
+  if (c.flow === "nocall") return `<div class="card speed-strip"><div><span class="eyebrow">Missed calls</span><p class="tiny">Parents ringing your business number</p></div>${stat("missed parent calls", fmt(missedN, "int"), missedTxt, missedN >= 3 ? "bad" : missedN ? "ok" : "good")}</div>`;
+  return `<div class="card speed-strip"><div><span class="eyebrow">Speed to lead</span><p class="tiny">Calls from the HighLevel app${ssTxt ? `, ${ssTxt}` : ""}</p></div>
     ${stat("called within 5 minutes", fmt(D.called_5min, "pct"), `target ${tgt(T.called_5min)}`, rag("called_5min", D.called_5min, T))}
     ${stat("called at all", fmt(pct(cur.leads_called, cur.leads), "pct"), `${fmt(cur.leads_called, "int")} of ${fmt(cur.leads, "int")} leads`)}
     ${stat("typical wait for a call", med === null ? "—" : med < 60 ? Math.round(med) + " min" : med < 2880 ? (med / 60).toFixed(1) + " hrs" : Math.round(med / 1440) + " days", "")}
-    ${stat("missed parent calls", fmt(n(info.missed_total_14d ?? info.missed_calls_14d), "int"), "last 14 days", n(info.missed_total_14d ?? info.missed_calls_14d) >= 3 ? "bad" : n(info.missed_total_14d ?? info.missed_calls_14d) ? "ok" : "good")}</div>`;
+    ${stat("missed parent calls", fmt(missedN, "int"), missedTxt, missedN >= 3 ? "bad" : missedN ? "ok" : "good")}</div>`;
 }
 function detailSpeed(box, M) {
   const { c, T, rows, info } = M;
@@ -1488,7 +1520,7 @@ function dailyIn(c, k, wk) { // anything logged day by day in that Monday-to-Sun
 }
 function progressHTML(c) {
   const dDone = ["cold", "warm", "social"].filter(k => ["good", "none"].includes(todayStatus(c, k)[1])).length, wks = ["cold", "warm", "social", "referral", "paid"], wDone = wks.filter(k => logStatus(c, k)[1] === "good").length;
-  return `<div class="${dDone === 3 ? "done" : ""}"><b>${dDone} of 3</b><span>daily done ${logWord()}</span></div><div class="${wDone === wks.length ? "done" : ""}"><b>${wDone} of ${wks.length}</b><span>weekly done</span></div>`;
+  return `<div class="${wDone === wks.length ? "done" : ""}"><b>${wDone} of ${wks.length}</b><span>weekly done</span></div><div class="${dDone === 3 ? "done" : ""}"><b>${dDone} of 3</b><span>daily done ${logWord()} (optional)</span></div>`;
 }
 function refreshLogBadges() { // after a quiet save: update the pills and progress line only
   if (S.tab !== "log") return; const c = coachInView();
@@ -1517,10 +1549,10 @@ function viewLog(main) {
   const group = (title, sub) => { const g = el("section", "section divided", `<div class="section-head"><div><h2>${title}</h2><p class="lead-sub">${sub}</p></div></div>`); main.appendChild(g); return g; };
   const pb = (b, k) => { if (PLAYBOOKS[k]) b.insertAdjacentHTML("beforeend", `<p class="tiny log-pb"><a href="${PLAYBOOKS[k][1]}" target="_blank" rel="noopener">Open the ${esc(CHANNEL_DEFS[k].name)} playbook</a></p>`); };
   if (part === "mkt") {
-  if (!readOnly()) main.appendChild(el("div", "log-steps", `<div><b>1</b><span><strong>Every day</strong>Before bed. Two minutes.</span></div><div><b>2</b><span><strong>Every Monday</strong>Last week's bookings and spend.</span></div><div><b>3</b><span><strong>Each time</strong>You send a reactivation blast.</span></div>`));
-  if (!readOnly() && !(c.channels || []).some(x => x.channel !== "warm" || x.key !== "s:list")) main.appendChild(el("div", "card log-first", `<b>First time here?</b> Start with <b>Every day</b> tonight: it takes two minutes. Do the <b>Every Monday</b> ones next Monday. Everything else can wait.`));
+  if (!readOnly()) main.appendChild(el("div", "log-steps", `<div><b>1</b><span><strong>Every Monday</strong>Last week's bookings and spend. Five minutes.</span></div><div><b>2</b><span><strong>Every day</strong>Optional. Two minutes before bed if you're doing outreach.</span></div><div><b>3</b><span><strong>Each time</strong>You send a reactivation blast.</span></div>`));
+  if (!readOnly() && !(c.channels || []).some(x => x.channel !== "warm" || x.key !== "s:list")) main.appendChild(el("div", "card log-first", `<b>First time here?</b> Start with <b>Every Monday</b>: five minutes, once a week. <b>Every day</b> is optional: fill it in if you're doing cold, warm or social outreach and want to see which one works. Everything else can wait.`));
   if (!readOnly()) main.appendChild(el("div", "log-progress", progressHTML(c)));
-  const daily = group("Every day", `Your outreach for ${S.logDay === 1 ? "yesterday" : "today"}. Open each one, fill it in, done.`);
+  const daily = group("Every day", `Optional. Your outreach for ${S.logDay === 1 ? "yesterday" : "today"}, if you're doing any. Open each one, fill it in, done.`);
   const dd = logDate(), dl = d => d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
   const sw = el("div", "day-switch", `<div class="day-seg" role="group" aria-label="Which day are you logging">${[[0, "Today", new Date()], [1, "Yesterday", addDays(new Date(), -1)]].map(([v, l, d]) => `<button type="button" data-d="${v}" aria-pressed="${(S.logDay || 0) === v}"><b>${l}</b><small>${dl(d)}</small></button>`).join("")}</div><p class="tiny">${S.logDay === 1 ? "Forgot last night? Fill in yesterday here, then switch back to Today." : "Missed a day? Tap Yesterday to fill it in."}</p>`);
   sw.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { S.logDay = +b.dataset.d; render(); document.querySelector(".day-switch")?.scrollIntoView({ block: "center" }); }));
@@ -1529,6 +1561,7 @@ function viewLog(main) {
   drop(daily, "warm-d", "Warm outreach", `Who you messaged ${logWord()} and who replied`, todayStatus(c, "warm"), b => { pb(b, "warm"); b.appendChild(strip(warmTodayCard(c))); });
   drop(daily, "social-d", "Social media", `What you posted ${logWord()} and who got in touch`, todayStatus(c, "social"), b => { pb(b, "social"); b.appendChild(strip(socialTodayCard(c))); });
   const weekly = group("Every Monday", "Last week's numbers, channel by channel. Pick the week at the top of each one.");
+  main.insertBefore(weekly, daily); // Monday is the must-do, daily is optional, so Monday comes first
   const once = group("Each time", "Log a blast the day you send it.");
   for (const [k, name, how] of LOG_ORDER) {
     drop(k === "reactivation" ? once : weekly, k, name, how, hasDrafts(k) ? ["Not saved yet", "bad"] : logStatus(c, k), body => {
@@ -1824,8 +1857,8 @@ function paidAds(main, mode = "stats") {
     catch (er) { toast("Didn't save. Check your connection and try again.", true); }
   }));
 
-  // what Meta unlocks
-  main.appendChild(el("section", "card meta-card", `<div class="row" style="justify-content:space-between"><div><span class="eyebrow">Coming next · preview</span><h3>Connect Meta and this tab fills itself</h3></div><span class="pill none">Example numbers, not yours</span></div>
+  // what Meta unlocks: skipped while the whole tab is already showing example numbers (one lot of examples is enough)
+  if (!example || adminEx()) main.appendChild(el("section", "card meta-card", `<div class="row" style="justify-content:space-between"><div><span class="eyebrow">Coming next · preview</span><h3>Connect Meta and this tab fills itself</h3></div><span class="pill none">Example numbers, not yours</span></div>
     <p class="muted small">Once your ad account is shared with Systems to Scale (view-only), ad spend comes straight from Meta every night, so there's nothing to type, and you get every ad broken down like this (last 28 days):</p>
     ${exampleAdTable()}
     <p class="tiny"><b>How to read it.</b> Hook rate: share of people who watch the first 3 seconds of a video, aim 25%+. Click rate: aim 1%+. Seen per person over 3.5 means the same parents keep seeing it and it's gone stale: time for new creative. Cost per lead is green when it's under your average. New members and CAC per ad need lead source switched on in your CRM.</p>`));
@@ -2470,6 +2503,19 @@ function viewMoney(main, part) { // part "form" = Business Log › Business, "ta
   if (!pl.length) return;
   const line = (label, f, fm, cls) => `<tr class="${cls || ""}"><td>${label}</td>${pl.map(r => { const v = f(r); return `<td>${v === null ? "—" : fmt(v, fm)}</td>`; }).join("")}</tr>`;
   const cost = k => r => has(r.m[k]) ? n(r.m[k]) : null;
+  // no costs anywhere yet: show the money and member rows, and one clear ask instead of rows of dashes
+  const anyCost = !!usualCosts(c) || pl.some(r => COST_KEYS.some(k => has(r.m?.[k])));
+  if (!anyCost) {
+    main.appendChild(el("section", part === "table" ? "section divided" : "section", `<div class="section-head"><div><h2>Month by month</h2><p class="tiny">${readOnly() ? "No costs entered yet, so there's no profit to show." : `Add your usual monthly costs (venue, wages, kit, software) once in <a href="#" class="go-costs" style="color:var(--accent-2)">Settings</a> and your profit and margin show here every month.`}</p></div></div>
+  <div class="table-wrap"><table class="pl-table"><thead><tr><th></th>${pl.map(r => `<th>${monthShort(r.month)}</th>`).join("")}</tr></thead><tbody>
+    ${line("Revenue", r => r.revenue, "gbp0", "total")}
+    ${line("Ad spend", r => r.s.spend_weeks ? r.s.ad_spend : null, "gbp0")}
+    ${line("Members at month end", r => r.members, "int")}${line("New clients", r => r.joined, "int")}${line("Cancellations", r => r.left, "int")}
+    <tr><td>Churn</td>${pl.map(r => `<td class="c-${rag("churn", r.churn, T)}">${fmt(r.churn, "pct")}</td>`).join("")}</tr>
+  </tbody></table></div>`));
+    main.querySelector(".go-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "settings"; render(); setTimeout(() => document.getElementById("s-costtotal")?.scrollIntoView({ block: "center" }), 50); });
+    return;
+  }
   main.appendChild(el("section", part === "table" ? "section divided" : "section", `<div class="section-head"><div><h2>Profit by month</h2><p class="tiny">${usualCosts(c) ? "Months marked * use your usual costs from Settings. " : "Profit shows once that month's costs are in. "}${readOnly() ? "" : `Add or change a month in <a href="#" class="go-money" style="color:var(--accent-2)">Business Log › Business</a>.`}</p></div></div>
   <div class="table-wrap"><table class="pl-table"><thead><tr><th></th>${pl.map(r => `<th>${monthShort(r.month)}${r.usual ? "*" : ""}</th>`).join("")}</tr></thead><tbody>
     ${sy ? line("Through the CRM", r => n(r.a.revenue), "gbp0") + line("Outside the CRM", r => has(r.m.other_revenue) ? n(r.m.other_revenue) : null, "gbp0") : ""}
