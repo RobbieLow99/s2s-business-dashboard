@@ -866,6 +866,8 @@ function lastDaysRows(rows, c, days) {
   return [has(spend) ? { ...r, ad_spend: spend } : r];
 }
 const last7Rows = (rows, c) => lastDaysRows(rows, c, 7);
+// coach's own Meta ad account, synced nightly by coach-meta-sync (kpi.coaches.meta)
+const metaOn = c => !!(c?.meta && c.meta.synced_at && !c.meta.error);
 // a show rate is only trusted once most appointments carry a showed / no-show mark (all history, not just since the start date)
 function markedShare(rows, k) { const a = k === "call_show_rate" ? ["calls_attended", "calls_noshow", "calls_booked"] : ["trials_attended", "trials_noshow", "trials_booked"], t = x => rows.reduce((v, w) => v + n(w[x]), 0), b = t(a[2]); return b >= 3 ? (t(a[0]) + t(a[1])) / b : 1; }
 const showUnreliable = (rows, k) => /show_rate/.test(k) && markedShare(rows, k) < 0.6;
@@ -955,7 +957,7 @@ function issues(c) {
     break;
   }
   const lw = rows.find(w => w.week_start === iso(lastMonday()));
-  out.adSpendMissing = !lw || !has(lw.ad_spend);
+  out.adSpendMissing = !metaOn(c) && (!lw || !has(lw.ad_spend));
   // setup first (nothing's right without it), then money at stake, then unmarked appointments, then funnel rates
   const tier = i => ["sync", "calendars", "flowmismatch"].includes(i.key) ? 0 : ["missed", "uncalled", "unconfirmed", "pastdue", "churn"].includes(i.key) ? 1 : i.key === "unmarked" ? 2 : 3;
   const worth = i => ({ churn: n(i.lost) * Math.min(12, n(retention(c).months) || 6), pastdue: n(info.past_due_fees) || n(info.past_due) * fee, missed: n(info.missed_calls_14d) * conv * ltv, uncalled: n(info.uncalled_leads_14d) * conv * ltv, unconfirmed: n(info.open?.unconfirmed?.length) * trialConv * ltv }[i.key] || 0);
@@ -1493,6 +1495,7 @@ const CHANNELS = [["all", "Overview"], ["paid", "Paid ads"], ["cold", "Cold outr
 function goLog(ch) { S.tab = "log"; S.logOpen = ch; S.logPart = ch === "money" || ch === "week" ? "biz" : "mkt"; render(); setTimeout(() => document.getElementById("log-" + ch)?.scrollIntoView({ block: "start" }), 30); }
 const LOG_ORDER = [["cold", "Cold outreach", "Name your post, log bookings, add or drop groups."], ["warm", "Warm outreach", "Bookings from your messages. Daily numbers go in Every day."], ["social", "Social media", "Your best post and bookings. Daily numbers go in Every day."], ["referral", "Referrals", "Families asked. Add each friend as they get in touch."], ["reactivation", "Reactivation", "Each blast you send, and what it booked"], ["paid", "Paid ads", "Last week's ad spend from Meta Ads Manager"]];
 function logStatus(c, k) {
+  if (k === "paid" && metaOn(c)) return ["From Meta", "good"];
   if (k === "paid") { const w = (model(c).rows || []).find(x => x.week_start === iso(lastMonday())); return w && has(w.ad_spend) ? ["Last week done", "good"] : ["Last week's spend to add", "ok"]; }
   if (k === "warm" && crmFed(c, k)) return ["From your CRM", "good"];
   const es = channelEntries(c, k);
@@ -1782,9 +1785,9 @@ function crmSrc(c, k, R) { // booked / showed / joined for one channel from the 
   return { leads: f("src_"), booked: f("src_booked_"), attended: f("src_showed_"), joined: f("src_joined_") };
 }
 function paidAds(main, mode = "stats") {
-  const edit = mode === "log" && !readOnly();
   const out = main; if (mode === "log") main = el("div"); // log mode: build the page off-screen and only show the spend table
   const c = coachInView(), M = model(c), { T, RT, sy } = M;
+  const edit = mode === "log" && !readOnly() && !metaOn(c);
   const example = mode === "stats" && !M.rows.some(w => has(w.ad_spend)) && !c.sync_info?.lead_source?.used; // example numbers (coaches and admin) until the coach has real ad data
   const rows = example ? exampleAdWeeks() : M.rows;
   const R = periodRange(S.chPeriod), ws = example ? exampleAdPeriod(R) : (R.is7 && last7Rows(rows, c)) || (R.is28 && lastDaysRows(rows, c, 28)) || inRange(rows, R.prevFrom ? addDays(R.from, 7) : R.from, R.prevFrom ? addDays(R.to, 7) : R.to), cur = sumWeeks(ws, c), D = derive(cur, c);
@@ -1846,7 +1849,7 @@ function paidAds(main, mode = "stats") {
       return { label: new Date(m + "-01T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }), sp, al: ws2.reduce((a, r) => a + r.al, 0), nc: lsOn ? ws2.reduce((a, r) => a + n(r.nc), 0) : null }; });
   } else tRows = last.slice(mode === "log" ? -8 : -({ "7d": 1, "4w": 4 }[S.chPeriod] || 13)).reverse().map(({ wk, w }) => ({ label: weekLabel(wk), wk, ...rowOf(w) }));
   // editable table
-  const tb = el("section", mode === "log" ? "" : "section divided", `${mode === "log" ? `<p class="tiny" style="margin-bottom:8px">Type each week's spend from Meta Ads Manager (Monday to Sunday). Saves when you click away.</p>` : `<div class="section-head"><div><h2>${byMonth ? "Month by month" : "Week by week"}</h2><p class="lead-sub">${esc(periodName)}.${readOnly() ? "" : " Type your weekly ad spend in your Business Log."}</p></div></div>`}
+  const tb = el("section", mode === "log" ? "" : "section divided", `${mode === "log" ? `<p class="tiny" style="margin-bottom:8px">${metaOn(c) ? `Comes straight from your Meta ad account every night (last synced ${ago(c.meta.synced_at)}). Nothing to type.` : "Type each week's spend from Meta Ads Manager (Monday to Sunday). Saves when you click away."}</p>` : `<div class="section-head"><div><h2>${byMonth ? "Month by month" : "Week by week"}</h2><p class="lead-sub">${esc(periodName)}.${readOnly() ? "" : " Type your weekly ad spend in your Business Log."}</p></div></div>`}
   <div class="table-wrap ch-table" id="ads-weeks"><table><thead><tr><th>${byMonth ? "Month" : "Week"}</th><th>Ad spend</th><th>Leads</th>${mode === "log" ? "" : "<th>New members</th><th>CAC</th><th>First-month ROAS</th><th>Lifetime ROAS</th>"}</tr></thead><tbody>
   ${tRows.map(({ label, wk, sp, al, nc, raw }) => { const x = sp && nc !== null && adLtv ? nc * adLtv / sp : null, f1 = sp && nc !== null ? nc * A.fee / sp : null;
     return `<tr><td>${label}</td><td>${!edit ? fmt(sp, "gbp0") : `<input class="spend-in" data-wk="${wk}" type="number" inputmode="decimal" min="0" step="0.01" placeholder="£" value="${sp === null ? "" : esc(raw)}" aria-label="Ad spend ${label}">`}</td>
@@ -1858,13 +1861,38 @@ function paidAds(main, mode = "stats") {
     catch (er) { toast("Didn't save. Check your connection and try again.", true); }
   }));
 
+  // the coach's real ads once their account is shared; otherwise what Meta unlocks
+  if (mode === "stats" && metaOn(c) && (c.meta.ads || []).length) { main.appendChild(realAdSection(c)); return; }
+  if (mode === "stats" && c.meta?.error) main.appendChild(el("section", "card meta-card", `<span class="eyebrow">Meta ads</span><h3>Can't read the ad account yet</h3><p class="muted small">${esc(c.meta.error)}</p>`));
   // what Meta unlocks: skipped while the whole tab is already showing example numbers (one lot of examples is enough)
-  if (!example || adminEx()) main.appendChild(el("section", "card meta-card", `<div class="row" style="justify-content:space-between"><div><span class="eyebrow">Coming next · preview</span><h3>Connect Meta and this tab fills itself</h3></div><span class="pill none">Example numbers, not yours</span></div>
+  if (!c.meta?.error && (!example || adminEx())) main.appendChild(el("section", "card meta-card", `<div class="row" style="justify-content:space-between"><div><span class="eyebrow">Coming next · preview</span><h3>Connect Meta and this tab fills itself</h3></div><span class="pill none">Example numbers, not yours</span></div>
     <p class="muted small">Once your ad account is shared with Systems to Scale (view-only), ad spend comes straight from Meta every night, so there's nothing to type, and you get every ad broken down like this (last 28 days):</p>
     ${exampleAdTable()}
     <p class="tiny"><b>How to read it.</b> Hook rate: share of people who watch the first 3 seconds of a video, aim 25%+. Click rate: aim 1%+. Seen per person over 3.5 means the same parents keep seeing it and it's gone stale: time for new creative. Cost per lead is green when it's under your average. New members and CAC per ad need lead source switched on in your CRM.</p>`));
 
 
+}
+/* the coach's own ads, last 28 days, from coach-meta-sync. Verdicts compare each ad with the account's own average cost per lead. */
+function realAdSection(c) {
+  const m = c.meta, ads = (m.ads || []).filter(a => a.spend > 0), cur = m.currency === "GBP" || !m.currency ? "£" : m.currency + " ";
+  const T = ads.reduce((t, a) => ({ spend: t.spend + a.spend, imp: t.imp + a.impressions, clicks: t.clicks + a.clicks, leads: t.leads + a.leads }), { spend: 0, imp: 0, clicks: 0, leads: 0 });
+  const avg = T.leads ? T.spend / T.leads : null, money = v => cur + (v >= 100 ? Math.round(v).toLocaleString("en-GB") : v.toFixed(2));
+  const verdict = a => { const cpl = a.leads ? a.spend / a.leads : null;
+    if (a.frequency > 3.5) return ["bad", "Tired: new creative"];
+    if (avg && a.leads >= 3 && cpl <= avg * 0.85) return ["good", "Best ad: scale it"];
+    if (avg && !a.leads && a.spend >= avg * 2.5) return ["bad", "Turn off: no leads"];
+    if (avg && a.leads >= 2 && cpl <= avg * 1.15) return ["good", "Working: keep it on"];
+    if (avg && a.spend < avg * 1.5) return ["none", "Too early: let it spend"];
+    return ["ok", "Keep testing"]; };
+  const g = (v, good, ok) => v >= good ? "c-good" : v >= ok ? "c-ok" : "c-bad";
+  const row = a => { const cpl = a.leads ? a.spend / a.leads : null, hook = a.video && a.impressions ? a.plays3s / a.impressions * 100 : null, [vc, vt] = verdict(a), off = a.status && a.status !== "ACTIVE";
+    return `<tr${off ? ' class="muted"' : ""}><td>${esc(a.name)}${off ? ` <span class="pill none">${a.status === "PAUSED" || a.status === "CAMPAIGN_PAUSED" || a.status === "ADSET_PAUSED" ? "off" : esc(String(a.status).toLowerCase().replace(/_/g, " "))}</span>` : ""}<br><small class="muted">${esc(a.campaign || "")}</small></td><td>${money(a.spend)}</td><td>${fmt(a.reach, "int")}</td><td class="${a.frequency <= 2.5 ? "c-good" : a.frequency <= 3.5 ? "c-ok" : "c-bad"}">${a.frequency.toFixed(1)}</td><td>${money(a.cpm)}</td><td class="${g(a.ctr, 1.5, 1)}">${a.ctr.toFixed(1)}%</td><td class="${hook === null ? "" : g(hook, 30, 20)}">${hook === null ? "—" : Math.round(hook) + "%"}</td><td>${a.leads}</td><td class="${cpl === null || !avg ? "" : cpl <= avg ? "c-good" : cpl <= avg * 1.5 ? "c-ok" : "c-bad"}">${cpl === null ? "—" : money(cpl)}</td><td><span class="pill ${vc}">${vt}</span></td></tr>`; };
+  return el("section", "section divided", `<div class="section-head"><div><h2>Ad by ad</h2><p class="lead-sub">Last 28 days, straight from your Meta ad account${m.account ? ` (${esc(m.account)})` : ""}. Synced ${ago(m.synced_at)}.</p></div></div>
+    <div class="table-wrap card"><table><thead><tr><th>Ad</th><th>Spend</th><th>People reached</th><th>Seen per person</th><th>Cost per 1,000 views</th><th>Click rate</th><th>Hook rate</th><th>Leads</th><th>Cost per lead</th><th>Verdict</th></tr></thead><tbody>
+    ${ads.map(row).join("")}
+    <tr><td><b>All ads</b></td><td><b>${money(T.spend)}</b></td><td>—</td><td>—</td><td><b>${T.imp ? money(T.spend / T.imp * 1000) : "—"}</b></td><td><b>${T.imp ? (T.clicks / T.imp * 100).toFixed(1) + "%" : "—"}</b></td><td>—</td><td><b>${T.leads}</b></td><td><b>${avg ? money(avg) : "—"}</b></td><td></td></tr>
+    </tbody></table></div>
+    <p class="tiny ret-note"><b>How to read it.</b> Leads are Meta's own count (form fills). Hook rate: share of people who watch the first 3 seconds of a video, aim 25%+. Click rate: aim 1%+. Seen per person over 3.5 means the same parents keep seeing it: time for new creative. Verdicts compare each ad with your account's average cost per lead (${avg ? money(avg) : "—"}). New members per ad need lead source switched on in your CRM.</p>`);
 }
 // made-up ads for the Meta preview; totals match the 28-day paid-ads example (£556, 70 leads, 6 new members)
 const EXAMPLE_ADS = [
@@ -2600,7 +2628,9 @@ function viewSettings(main) {
     ["none", "Booking flow", adm ? "Set below" : "Set by Robbie", `${flowLabel}. It has to match the automations in your CRM, so Robbie changes it.${flowLast ? ` Last changed ${shortDate(flowLast.at)}.` : ""}`],
     sy ? ["good", "CRM", `Synced ${ago(c.last_sync)}`, "Members, MRR, leads and your funnel fill themselves."] : c.crm_connected ? ["ok", "CRM", "Waiting for first sync", "Your numbers will appear after the first overnight sync."] : ["none", "CRM", "Not connected", "You type your weekly and monthly numbers in the Business Log until it is."],
     lsOn ? ["good", "Lead source", "On", "Booked, Showed up and New members for each channel come from your CRM, so the Business Log only asks for your daily work."] : ["none", "Lead source", "Off", "You type Booked, Showed up and New members in the Business Log each Monday. Ask Robbie to switch it on."],
-    ["none", "Meta ads", "Not connected yet", "Coming soon. Until then, type your ad spend each Monday in the Business Log."],
+    metaOn(c) ? ["good", "Meta ads", `Synced ${ago(c.meta.synced_at)}`, "Ad spend and every ad's results come straight from your Meta ad account every night."]
+      : c.meta?.error ? ["bad", "Meta ads", "Can't read it yet", esc(c.meta.error)]
+      : ["none", "Meta ads", "Not connected yet", "Share your ad account with Systems to Scale (view-only) and it fills itself. Until then, type your ad spend each Monday in the Business Log."],
   ].map(([r, name, state, what]) => `<div class="set-conn-row"><div><b>${name}</b><p class="set-help">${what}</p></div><span class="pill ${r}">${state}</span></div>`).join("")}</div>`)}
   ${ro ? "" : `<div class="set-save card"><button class="btn" type="submit">Save settings</button><span class="unsaved-note" hidden>Not saved yet. Tap Save.</span></div>`}
   </form>
@@ -3243,6 +3273,7 @@ function viewManage(main) {
           <label>Location ID<input class="loc" value="${esc(c.ghl_location || "")}" placeholder="from the sub-account URL"></label>
           <label>Read-only key <small>${c.crm_connected ? "Saved. Leave blank to keep it" : "Settings › Private Integrations"}</small><input class="tok" type="password" autocomplete="off" placeholder="pit-…"></label>
           <label>Coach's email <small>The one they use for Circle</small><input class="em" type="email" value="${esc(c.email || "")}" placeholder="coach@…"></label>
+          <label>Meta ad account ID <small>${c.meta_ad_account ? (c.meta?.error ? "Can't read it yet: share it with Robbie Low Coach" : c.meta?.synced_at ? `Synced ${ago(c.meta.synced_at)}` : "Saved. Fills overnight") : "Ads Manager › account dropdown, numbers only"}</small><input class="act" inputmode="numeric" value="${esc(String(c.meta_ad_account || "").replace(/^act_/, ""))}" placeholder="e.g. 2108895596617008"></label>
         </div>
         <div class="row" style="margin-top:12px"><button class="btn-ghost linksent">${c.link_sent_at ? "Link sent ✓" : "Mark link sent"}</button><button class="btn-ghost savecrm">Save connection</button><button class="btn-ghost sync">Sync now</button>${c.sync_error ? `<span class="status" style="color:var(--bad)">${esc(c.sync_error)}</span>` : ""}</div>
       </details>`);
@@ -3260,6 +3291,7 @@ function viewManage(main) {
     card.querySelector(".linksent").addEventListener("click", async () => { try { await rpc("kpi_admin_set_link_sent", { p_code: S.code, p_coach: c.id, p_sent: !c.link_sent_at }); await loadAdmin(); render(); } catch (e) { toast("Didn't save. Try again.", true); } });
     card.querySelector(".savecrm").addEventListener("click", async () => {
       try { await rpc("kpi_admin_set_email", { p_code: S.code, p_coach: c.id, p_email: card.querySelector(".em").value });
+        await rpc("kpi_admin_set_meta_account", { p_code: S.code, p_coach: c.id, p_act: card.querySelector(".act").value });
         await rpc("kpi_admin_set_crm", { p_code: S.code, p_coach: c.id, p_crm: card.querySelector(".crm").value, p_location: card.querySelector(".loc").value, p_token: card.querySelector(".tok").value });
         await rpc("kpi_admin_sync_now", { p_code: S.code, p_coach: c.id }); await loadAdmin(); render(); toast("Saved. First sync is running: refresh in a minute."); }
       catch (er) { toast("Couldn't save the connection.", true); }
