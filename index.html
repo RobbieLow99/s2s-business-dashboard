@@ -1206,7 +1206,7 @@ function viewDash(main) {
   const paidSrc = crmSrc(c, "paid", periodRange(S.period)), back = spend12 && paidSrc ? paidSrc.joined * adMaths(c).ltgp / spend12 : null;
   const inP = P.label === "this week" ? "this week" : "in the " + P.label, gbpCh = v => (v >= 0 ? "+" : "−") + fmt(Math.abs(v), "gbp0");
   const card = (label, value, change, cls, foot) => `<div class="${cls}"><span class="v-l">${label}</span><b>${value}</b>${change ? `<em>${change}</em>` : ""}${foot ? `<small>${foot}</small>` : ""}</div>`;
-  const profitBit = M.lastFull ? `Profit ${fmt(M.lastFull.profit, "gbp0")} in ${monthShort(M.lastFull.month)}` : readOnly() ? "" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add costs to see profit</a>`;
+  const profitBit = M.lastFull ? `Profit ${fmt(M.lastFull.profit, "gbp0")} in ${monthShort(M.lastFull.month)}${M.lastFull.revenue > 0 ? ` · ${Math.round(M.lastFull.profit / M.lastFull.revenue * 100)}% margin` : ""}` : readOnly() ? "" : `<a href="#" id="add-costs" style="color:var(--accent-2)">Add costs to see profit</a>`;
   const iRev = M.months.findIndex(m => m.month === M.prevKey), revBefore = iRev > 0 ? n(M.months[iRev - 1].revenue) : 0, revLast = M.prevM ? n(M.prevM.revenue) : null, revD = revLast !== null && revBefore ? revLast - revBefore : null;
   const toneOf = v => v > 0 ? "up" : v < 0 ? "down" : "";
   const lastMem = [...M.months].reverse().find(m => n(m.members) > 0), lastRev = [...M.months].reverse().find(m => n(m.revenue) > 0);
@@ -1498,7 +1498,8 @@ function logStatus(c, k) {
   const es = channelEntries(c, k);
   if (CHANNEL_DEFS[k].mode !== "week") { const last = es.map(e => e.data.date || e.key).sort().pop(); return last ? [`Last blast ${lastPosted(last.slice(0, 10))}`, "none"] : ["Nothing logged yet", "none"]; }
   const done = wk => es.some(e => e.key === iso(wk)) || (crmFed(c, k) && dailyIn(c, k, wk)); // with the CRM tracking bookings, doing the daily work counts as the week done
-  return done(thisMonday()) ? ["This week done", "good"] : done(lastMonday()) ? ["This week to do", "ok"] : ["Last week to do", "bad"];
+  // the Monday job is LAST week's numbers (same as paid ads), so last week saved = done until next Monday
+  return done(thisMonday()) ? ["This week done", "good"] : done(lastMonday()) ? ["Last week done", "good"] : ["Last week to do", "bad"];
 }
 function todayStatus(c, k) { // daily dropdown pill, for whichever day is picked
   const dd = logDate(), t = iso(dd), w = logWord();
@@ -2513,7 +2514,7 @@ function viewMoney(main, part) { // part "form" = Business Log › Business, "ta
     ${line("Members at month end", r => r.members, "int")}${line("New clients", r => r.joined, "int")}${line("Cancellations", r => r.left, "int")}
     <tr><td>Churn</td>${pl.map(r => `<td class="c-${rag("churn", r.churn, T)}">${fmt(r.churn, "pct")}</td>`).join("")}</tr>
   </tbody></table></div>`));
-    main.querySelector(".go-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "settings"; render(); setTimeout(() => document.getElementById("s-costtotal")?.scrollIntoView({ block: "center" }), 50); });
+    main.querySelector(".go-costs")?.addEventListener("click", e => { e.preventDefault(); S.tab = "settings"; render(); setTimeout(() => document.getElementById("s-cost_venue")?.scrollIntoView({ block: "center" }), 50); });
     return;
   }
   main.appendChild(el("section", part === "table" ? "section divided" : "section", `<div class="section-head"><div><h2>Profit by month</h2><p class="tiny">${usualCosts(c) ? "Months marked * use your usual costs from Settings. " : "Profit shows once that month's costs are in. "}${readOnly() ? "" : `Add or change a month in <a href="#" class="go-money" style="color:var(--accent-2)">Business Log › Business</a>.`}</p></div></div>
