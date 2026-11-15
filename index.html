@@ -339,7 +339,7 @@ main.mkt { gap: 40px; } main.mkt > .divided { padding-top: 36px; } .mkt .section
 .scale-verdict small { display: block; font-weight: 500; font-size: 13px; color: var(--fg-2); margin-top: 2px; }
 .scale-verdict.good { background: rgba(43,196,138,.12); } .scale-verdict.ok { background: rgba(242,179,61,.12); } .scale-verdict.bad { background: rgba(240,86,106,.12); } .scale-verdict.none { background: rgba(94,110,132,.14); }
 .scale-verdict .dot, .scale-q .dot { width: 14px; height: 14px; flex: none; border-radius: 50%; background: var(--fg-3); }
-.good > .dot { background: var(--good); } .ok > .dot { background: var(--ok); } .bad > .dot { background: var(--bad); }
+.scale-verdict.good .dot, .scale-q.good .dot { background: var(--good); } .scale-verdict.ok .dot, .scale-q.ok .dot { background: var(--ok); } .scale-verdict.bad .dot, .scale-q.bad .dot { background: var(--bad); }
 .scale-qs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .scale-q { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
 .scale-q .q-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--fg-2); text-transform: uppercase; letter-spacing: .04em; }
