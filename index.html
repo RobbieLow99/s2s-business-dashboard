@@ -334,6 +334,20 @@ main.mkt { gap: 40px; } main.mkt > .divided { padding-top: 36px; } .mkt .section
 .how-res.c-good { color: var(--good); } .how-res.c-ok { color: var(--ok); } .how-res.c-bad { color: var(--bad); } .how-sum { grid-column: 2 / -1; justify-self: start; font-size: 12px; font-weight: 600; color: #C9B3FF; background: rgba(140,82,255,.16); border: 1px solid rgba(140,82,255,.4); border-radius: 999px; padding: 3px 10px; }
 @media (max-width: 600px) { .how-row { padding: 14px; column-gap: 10px; } .how-res { font-size: 18px; } } .check-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .check-row input { width: 18px; height: 18px; margin: 0; } .check-row small { flex-basis: 100%; }
 .ads-how .est { color: #FFC24D; font-size: 12px; }
+.scale-card { border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: rgba(140,82,255,.05); }
+.scale-verdict { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; margin-bottom: 14px; font-weight: 800; font-size: 16px; }
+.scale-verdict small { display: block; font-weight: 500; font-size: 13px; color: var(--fg-2); margin-top: 2px; }
+.scale-verdict.good { background: rgba(43,196,138,.12); } .scale-verdict.ok { background: rgba(242,179,61,.12); } .scale-verdict.bad { background: rgba(240,86,106,.12); } .scale-verdict.none { background: rgba(94,110,132,.14); }
+.scale-verdict .dot, .scale-q .dot { width: 14px; height: 14px; flex: none; border-radius: 50%; background: var(--fg-3); }
+.good > .dot { background: var(--good); } .ok > .dot { background: var(--ok); } .bad > .dot { background: var(--bad); }
+.scale-qs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.scale-q { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.scale-q .q-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--fg-2); text-transform: uppercase; letter-spacing: .04em; }
+.scale-q .q-name { font-weight: 800; font-size: 14px; } .scale-q .q-fig { font-size: 26px; font-weight: 800; }
+.scale-q.good .q-fig { color: var(--good); } .scale-q.ok .q-fig { color: var(--ok); } .scale-q.bad .q-fig { color: var(--bad); }
+.scale-q .q-say { font-size: 13px; color: var(--fg); } .scale-q .q-bench { font-size: 12px; color: var(--fg-3); margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--line); }
+.scale-card .tiny { margin-top: 12px; color: var(--fg-3); }
+@media (max-width: 720px) { .scale-qs { grid-template-columns: 1fr; } }
 .ads-how > summary { font-size: 15px; color: var(--fg); padding: 14px; border-color: rgba(140,82,255,.55); background: rgba(140,82,255,.14); } .ads-how > summary:hover { border-color: var(--accent-2); }
 .how-q { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-2, #8C52FF); color: #fff; font-size: 13px; font-weight: 800; }
 .how-plain { display: block; font-size: 12px; font-weight: 500; color: var(--accent-2); margin-top: 1px; } .how-why b { color: var(--fg); } .how-why { grid-column: 2 / -1; margin: 2px 0 0; font-size: 13px; line-height: 1.5; color: var(--fg-2); }
@@ -831,6 +845,29 @@ const VAT_KEEP = { standard: 1 / 1.2, flat: 1 - 0.085 }, VAT_LABEL = { standard:
 const vatOf = c => { const v = (c.targets || {}).vat; return v === true ? "standard" : VAT_KEEP[v] ? v : null; };
 const CARD_FEES = 0.02; // Stripe ~1.5% + 20p a payment ≈ 2% of revenue on £100+ fees; taken off the P&L margin as P&L has no card-fee line
 const DEFAULT_MARGIN = 0.4, _adm = new WeakMap();
+/* "Can I scale my ads?" (Robbie 15 Nov): three questions, one verdict, same benchmarks for S2S and every coach.
+   1 Worth it?  lifetime ROAS (= LTGP ÷ CAC, the same number): 3x+ green, 1-3x amber, under 1x red.
+   2 Can I afford it?  first-month ROAS: 1x+ green, 0.5-1x amber (keep a month of ad costs in the bank), under 0.5x red.
+   3 Still working?  CAC vs the limit (LTGP ÷ 3): up to half green, half to 80% amber, over 80% red. */
+function scaleCard({ lt, fm, cac, limit, costWord = "ad spend", period = "" }) {
+  const g = v => fmt(v, "gbp0"), x = v => v.toFixed(1) + "x";
+  const q1 = lt === null ? null : lt >= 3 ? "good" : lt >= 1 ? "ok" : "bad";
+  const q2 = fm === null ? null : fm >= 1 ? "good" : fm >= 0.5 ? "ok" : "bad";
+  const q3 = cac === null || !limit ? null : cac <= limit * 0.5 ? "good" : cac <= limit * 0.8 ? "ok" : "bad";
+  const back = fm ? Math.max(1, Math.ceil(1 / fm)) : null;
+  const q = (cls, n, name, fig, say, bench) => `<div class="scale-q ${cls || "none"}"><span class="q-top"><span class="dot"></span>${n}</span><span class="q-name">${name}</span><span class="q-fig">${fig}</span><span class="q-say">${say}</span><span class="q-bench">${bench}</span></div>`;
+  const qs = [
+    q(q1, "1. Worth it?", "Lifetime ROAS", lt === null ? "—" : x(lt), lt === null ? "Needs ad spend and a new client" : q1 === "good" ? `Every £1 brings back £${lt.toFixed(2)} profit. Ads are worth it.` : q1 === "ok" ? `£${lt.toFixed(2)} profit per £1. Not enough room yet.` : `You get back less than you spend. You're losing money.`, "Aim for 3x or more. Same number as LTGP to CAC."),
+    q(q2, "2. Can I afford it?", "First-month ROAS", fm === null ? "—" : x(fm), fm === null ? "Needs ad spend and a new client" : q2 === "good" ? "Clients pay back their cost in month one. Ads pay for themselves." : `Paid back in about ${back} month${back === 1 ? "" : "s"}. ${q2 === "ok" ? "Keep about a month of ad costs in the bank." : "Scaling will drain your cash."}`, "1x or more pays for itself. 0.5x to 1x: keep a cash buffer."),
+    q(q3, "3. Still working?", "Cost per new client (CAC)", cac === null ? "—" : g(cac), cac === null ? "Needs ad spend and a new client" : !limit ? "Needs what a client is worth" : q3 === "good" ? `Well under your ${g(limit)} limit.` : q3 === "ok" ? `Getting close to your ${g(limit)} limit.` : cac <= limit ? `Nearly at your ${g(limit)} limit.` : `Over your ${g(limit)} limit.`, limit ? `Raise spend under ${g(limit * 0.5)} · hold ${g(limit * 0.5)} to ${g(limit * 0.8)} · pull back over ${g(limit * 0.8)}` : "Limit = what a client is worth ÷ 3"),
+  ].join("");
+  const all = [q1, q2, q3];
+  const [cls, head, sub] = all.includes(null) ? ["none", "Not enough data yet", "You need ad spend and at least one new client from ads to answer all three."]
+    : q1 === "bad" || q3 === "bad" ? ["bad", "Don't scale. Pull back or fix it first.", q1 === "bad" ? "Your ads lose money over a client's lifetime. Fix the ad, the follow-up or your price." : "Clients are costing too much. Find the leak: cost per call, show-up rate or close rate."]
+    : q1 === "good" && q3 === "good" && q2 !== "bad" ? ["good", "Scale: raise your daily budget 20 to 30% this week.", q2 === "good" ? "All three are green. Check again next Monday." : "Keep about a month of ad costs in the bank, because clients take a while to pay you back."]
+    : ["ok", "Hold your budget. Fix the amber one first.", q2 === "bad" ? "Ads are profitable, but you'll run short of cash if you scale now." : "Get it back to green, then start raising spend again."];
+  return `<div class="scale-card"><div class="scale-verdict ${cls}"><span class="dot"></span><div>${head}<small>${sub}</small></div></div><div class="scale-qs">${qs}</div><p class="tiny">${period ? esc(period) + ". " : ""}Check it every Monday. Raise spend in small steps, because cost per client usually rises as you spend more. Costs include ${esc(costWord)}.</p></div>`;
+}
 function adMaths(c) {
   if (_adm.has(c)) return _adm.get(c);
   const vat = vatOf(c), keep = vat ? VAT_KEEP[vat] : 1, RT = retention(c), fee = (n(RT.fee) || n(c.avg_fee)) * keep, early = !RT.real || !RT.span || RT.span < 6;
@@ -1830,11 +1867,12 @@ function paidAds(main, mode = "stats") {
     const tiles = [["Ad spend", fmt(spend, "gbp0"), spend === null ? "Not entered yet" : cur.spend_weeks < cur.weeks ? `${cur.spend_weeks} of ${cur.weeks} weeks in` : ""], ["Leads", fmt(adLeads, "int"), cpl === null ? "" : `${fmt(cpl, "gbp")} each`], ["Booked", dash(pBooked), pBooked === null ? need : `${pctOf(pBooked, adLeads)} of leads`], ["Showed up", dash(pShowed), pShowed === null ? need : `${pctOf(pShowed, pBooked)} of bookings`], ["New members", dash(pJoined), pJoined === null ? need : `${pctOf(pJoined, pShowed)} joined`], ["MRR added", pJoined === null ? "—" : fmt(pJoined * fee, "gbp0"), pJoined === null ? need : `${fmt(pJoined, "int")} × ${fmt(fee, "gbp0")}`, pJoined && fee ? "ros-cell up" : ""]];
     const missing = !example && !readOnly() && !has(latestSpend(rows));
     if (example) main.appendChild(el("section", "section", `<div class="card example-flag"><b>Example numbers.</b> This is what this tab looks like once your ads are tracked. Your real numbers replace these as soon as you add your ad spend in your Business Log or switch on lead source in your CRM.</div>`));
+    const scale = el("section", "section divided", `<div class="section-head"><div><h2>Can I scale my ads?</h2><p class="lead-sub">Three questions. Green on all three means raise your budget.</p></div></div>${scaleCard({ lt: ltvX !== null && pJoined ? ltvX : null, fm: fmX, cac: cpm, limit: worth, costWord: "your ad spend", period: periodName })}`);
     const head = el("section", "section", `<div class="ch-boxes three">${b0}${b1}${b2}</div>${howTo}`);
     const nums = el("section", "section divided", `<div class="section-head"><div><h2>Results</h2></div></div>
       <section class="since ch-strip" style="grid-template-columns:150px repeat(6, minmax(0, 1fr))"><div class="since-when">${esc(periodName)}</div>${tiles.map(([l, v, f, cls]) => `<div${cls ? ` class="${cls}"` : ""}><b>${v}</b><span>${l}</span>${f ? `<small>${f}</small>` : ""}</div>`).join("")}</section>
       ${missing ? `<p class="post-compare"><b>Last week's ad spend isn't in yet.</b> Without it, these numbers are guesses. <button type="button" class="link-btn" id="ads-add">Add it now</button></p>` : ""}`);
-    main.appendChild(head); main.appendChild(nums);
+    main.appendChild(head); main.appendChild(scale); main.appendChild(nums);
     nums.querySelector("#ads-add")?.addEventListener("click", () => goLog("paid"));
   }
   const last = []; for (let i = 12; i >= 0; i--) { const wk = iso(addDays(lastMonday(), -7 * i)); last.push({ wk, w: rows.find(x => x.week_start === wk) }); }
@@ -2917,6 +2955,7 @@ function viewS2SAds(main) {
     card("Cost to win a client", fmt(xCac, "gbp0"), W.cap ? `Spend up to ${fmt(W.cap, "gbp0")}` : "", cacTone, xCac === null ? (sp === null ? "Needs ad spend" : AM ? "No clients from ads or DMs yet" : "No new clients yet") : `${AM ? `${AM.all.won} client${AM.all.won === 1 ? "" : "s"} from ads and DMs, incl. setter and commission. ` : ""}${cacTone === "up" ? "Under your limit: room to spend more" : "Over your limit: fix the funnel first"}`),
     card("Return on ad spend", xLt === null ? "—" : xLt.toFixed(1) + "x", xFm !== null ? `${xFm.toFixed(1)}x back in month one` : "", xLt === null ? "" : xLt >= 3 ? "up" : xLt >= 1 ? "" : "down", xLt === null ? `Needs ad spend and a client${src ? " from ads or DMs" : ""}` : `£${xLt.toFixed(2)} profit back for every £1 · lifetime`),
   ].join("")}</div></div>`));
+  main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>Can I scale my ads?</h2><p class="lead-sub">Three questions. Green on all three means raise your budget.</p></div></div>${scaleCard({ lt: xLt, fm: xFm, cac: xCac, limit: W.cap, costWord: AM ? "ads, setter pay and commission" : "ad spend", period: cap(label) })}`));
   if (AM) main.appendChild(s2sScorecard(d, W, AM));
   if (AM) main.appendChild(s2sThreeWay(AM, W, label, setter));
 
