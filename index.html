@@ -571,7 +571,7 @@ main.mkt > .log-part + .divided { border-top: 0; padding-top: 4px; }
 .v-figs small { font-size: 11px; color: var(--fg-3); line-height: 1.35; }
 /* 16 Nov: stop the top boxes changing size with the filter */
 .v-figs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.v-figs > div { min-width: 0; min-height: 164px; }
+.v-figs > div { min-width: 0; min-height: 132px; align-content: center; }
 .v-figs > div.amber em { color: #F5C26B; }
 @media (max-width: 720px) { .v-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .brand-text b.biz-name { font-size: 30px !important; }
@@ -1264,8 +1264,8 @@ function viewDash(main) {
       : card(`Total revenue (${monthShort(M.prevKey)})`, revLast === null ? "—" : fmt(revLast, "gbp0"), revD !== null ? `${gbpCh(revD)} on the month before` : "", revD === null ? "" : toneOf(revD), [M.nowM ? `${fmt(n(M.nowM.revenue), "gbp0")} so far in ${monthShort(M.nowKey)}` : "", profitBit].filter(Boolean).join(" · ")),
     card("Monthly recurring revenue", fmt(sy ? M.mrr : mrrStale ? lastRev.revenue : M.nowM?.revenue, "gbp0"), mrrD === null ? "" : `${gbpCh(mrrD)} net ${mrrIn}`, mrrD === null ? "" : toneOf(mrrD), mrrStale ? `From ${monthShort(lastRev.month)}` : ""),
     card("Paying members", fmt(memStale ? lastMem.members : M.members, "int"), `${P.members > 0 ? "+" : ""}${P.members} net ${inP}`, toneOf(P.members), memStale ? `At the end of ${monthShort(lastMem.month)}` : ""),
-    PC && PC.now ? card("Monthly churn", PC.now.churn.toFixed(1) + "%", churnVs(PC), churnTone(PC.now.churn, PC.now.start), churnNote(PC) || `${PC.now.left} left in the ${PC.label.replace("last ", "")}${P.weeks <= 4 ? " · as a monthly rate" : " · average per month"}`)
-      : card("Monthly churn", "—", "", "", "Needs payments through your CRM"),
+    PC && PC.now ? card("Monthly churn", PC.now.churn.toFixed(1) + "%", churnVs(PC), churnTone(PC.now.churn, PC.now.start), "")
+      : card("Monthly churn", "—", "", "", ""),
   ].join("");
   main.appendChild(el("section", `verdict ${V.cls}`, `<div class="v-main">
     <div class="v-figs">${row}</div>
