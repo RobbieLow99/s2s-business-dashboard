@@ -567,7 +567,13 @@ main.mkt > .log-part + .divided { border-top: 0; padding-top: 4px; }
 .v-l { font-size: 13px; font-weight: 600; color: var(--fg-2); }
 .v-figs em { font-style: normal; font-size: 13px; font-weight: 700; color: var(--fg-2); }
 .v-figs > div.up em { color: #7BE3B9; } .v-figs > div.down em { color: #FF9AA8; }
+.v-figs > div.amber { border-color: rgba(245,183,73,.45); background: linear-gradient(135deg, rgba(245,183,73,.16), rgba(245,183,73,.03)); }
 .v-figs small { font-size: 11px; color: var(--fg-3); line-height: 1.35; }
+/* 16 Nov: stop the top boxes changing size with the filter */
+.v-figs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.v-figs > div { min-width: 0; min-height: 164px; }
+.v-figs > div.amber em { color: #F5C26B; }
+@media (max-width: 720px) { .v-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .brand-text b.biz-name { font-size: 30px !important; }
 .brand-text .brand-kicker { font-size: 13px; }
 .page-hello { text-align: center; } .page-hello h1 { font-size: clamp(22px, 3vw, 30px); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
@@ -947,7 +953,8 @@ function monthRows(c) {
 function issues(c) {
   const T = targetsFor(c), info = c.sync_info || {}, rows = weekRows(c);
   const fc = lastFlowChange(c), fm = fc ? mondayISO(fc.at) : null;
-  const R = periodRange("4w"), s4w = sumWeeks(inRange(rows, fm && fm > iso(R.from) ? parseISO(fm) : R.from, R.to), c), D = derive(s4w, c);
+  const R = periodRange("4w"), roll28 = !(fm && fm > iso(R.from)) && info.daily_w ? lastDaysRows(rows, c, 28) : null; // 16 Nov: same rolling 28 days as the funnel
+  const s4w = roll28 ? sumWeeks(roll28, c) : sumWeeks(inRange(rows, fm && fm > iso(R.from) ? parseISO(fm) : R.from, R.to), c), D = derive(s4w, c);
   const out = [], fn = firstName(c);
   // what a lead or an under-target rate is worth, for ranking by money at stake
   const R13 = periodRange("13w"), s13 = sumWeeks(inRange(rows, R13.from, R13.to), c), ltv = n(retention(c).ltv), fee = n(retention(c).fee);
@@ -990,7 +997,7 @@ function issues(c) {
   for (const k of [...order].sort((a, b) => rateWorth(b) - rateWorth(a))) { // of the rates under target, the one costing the most
     if (rag(k, D[k], T) !== "bad") continue;
     if ((k === "call_show_rate" || k === "show_rate") && (unm >= 5 || showUnreliable(inRange(rows, R.from, R.to), k))) continue; // unmarked appointments make these unreliable
-    out.push({ sev: "bad", key: k, title: `${T[k].label}: ${fmt(D[k], T[k].fmt)} (target ${tgt(T[k])})`, body: ADVICE[k], msg: `${fn}, your ${T[k].label.toLowerCase()} is ${fmt(D[k], T[k].fmt)} over the last 4 weeks against a target of ${tgt(T[k])}. ${ADVICE[k]}` });
+    out.push({ sev: "bad", key: k, title: `${T[k].label}: ${fmt(D[k], T[k].fmt)} (target ${tgt(T[k])})`, body: ADVICE[k], msg: `${fn}, your ${T[k].label.toLowerCase()} is ${fmt(D[k], T[k].fmt)} over the last 28 days against a target of ${tgt(T[k])}. ${ADVICE[k]}` });
     break;
   }
   const lw = rows.find(w => w.week_start === iso(lastMonday()));
@@ -1076,7 +1083,7 @@ function render() {
   document.getElementById("back")?.addEventListener("click", () => { S.coachPreview = false; S.viewing = null; S.tab = "admin"; render(); scrollTo(0, 0); });
   const main = document.getElementById("main");
 
-  ({ dash: m => { viewDash(m); if (!(S.me.is_admin && !S.viewing)) viewMoney(m, "table"); }, ads: viewAds, log: viewLog, settings: viewSettings, s2s: viewS2S, s2sads: viewS2SAds, admin: viewAdmin, manage: viewManage })[S.tab](main);
+  ({ dash: m => { viewDash(m); /* Month by month table removed from the Business tab (Robbie 16 Nov); viewMoney(m, "table") brings it back */ }, ads: viewAds, log: viewLog, settings: viewSettings, s2s: viewS2S, s2sads: viewS2SAds, admin: viewAdmin, manage: viewManage })[S.tab](main);
 }
 function kpi(label, value, foot, r, delta) { return `<div class="kpi" data-rag="${r || "none"}"><span class="kpi-label">${esc(label)}</span><span class="kpi-value">${value}</span><div class="kpi-foot"><span>${foot || ""}</span>${delta || ""}</div></div>`; }
 function pctDelta(v, p, unit) {
@@ -1236,7 +1243,7 @@ function viewDash(main) {
 
   // 1. verdict
   if (!PAGE_SEG.some(x => x[0] === S.period)) S.period = "4w";
-  const P = pagePeriod(M, S.period), V = verdict({ ...M, mrrChange: P.money ? P.mrrNet : M.mrrChange });
+  const P = pagePeriod(M, S.period), V = verdict({ ...M, mrrChange: P.money ? P.mrrNet : M.mrrChange }), PC = periodChurn(M, P);
   const pageBar = el("div", "filter-row centre", seg("page-p", PAGE_SEG, S.period));
   main.appendChild(pageBar); onSeg(pageBar, "page-p", v => { S.period = v; render(); });
   const dMem = P.members, sign = v => v >= 0 ? "+" : "−", tone = v => v > 0 ? "up" : v < 0 ? "down" : "";
@@ -1257,8 +1264,8 @@ function viewDash(main) {
       : card(`Total revenue (${monthShort(M.prevKey)})`, revLast === null ? "—" : fmt(revLast, "gbp0"), revD !== null ? `${gbpCh(revD)} on the month before` : "", revD === null ? "" : toneOf(revD), [M.nowM ? `${fmt(n(M.nowM.revenue), "gbp0")} so far in ${monthShort(M.nowKey)}` : "", profitBit].filter(Boolean).join(" · ")),
     card("Monthly recurring revenue", fmt(sy ? M.mrr : mrrStale ? lastRev.revenue : M.nowM?.revenue, "gbp0"), mrrD === null ? "" : `${gbpCh(mrrD)} net ${mrrIn}`, mrrD === null ? "" : toneOf(mrrD), mrrStale ? `From ${monthShort(lastRev.month)}` : ""),
     card("Paying members", fmt(memStale ? lastMem.members : M.members, "int"), `${P.members > 0 ? "+" : ""}${P.members} net ${inP}`, toneOf(P.members), memStale ? `At the end of ${monthShort(lastMem.month)}` : ""),
-    back === null && adminEx() ? card("LTGP to CAC", '4.2x <span class="ex">example</span>', "", "up", "£4.20 back for every £1 · example until ad spend is entered")
-      : card("LTGP to CAC", back === null ? "—" : back.toFixed(1) + "x", "", roasR, back === null ? (spend12 && !paidSrc ? "Needs lead source switched on in your CRM, so only members from ads count" : readOnly() ? "No ad spend entered yet" : `<a href="#" id="go-spend" style="color:var(--accent-2)">Add your ad spend to see this</a>`) : `£${back.toFixed(2)} profit back for every £1 · lifetime · ${P.label}`),
+    PC && PC.now ? card("Monthly churn", PC.now.churn.toFixed(1) + "%", churnVs(PC), churnTone(PC.now.churn, PC.now.start), churnNote(PC) || `${PC.now.left} left in the ${PC.label.replace("last ", "")}${P.weeks <= 4 ? " · as a monthly rate" : " · average per month"}`)
+      : card("Monthly churn", "—", "", "", "Needs payments through your CRM"),
   ].join("");
   main.appendChild(el("section", `verdict ${V.cls}`, `<div class="v-main">
     <div class="v-figs">${row}</div>
@@ -1301,7 +1308,7 @@ function viewDash(main) {
   }
   const gHead = el("div", "section-head divided", `<div><h2>Client growth</h2><p class="lead-sub">${M.sy ? `Your recurring revenue, how long members stay, and who's joined and churned each ${per}.` : `How many paying members you've got, as well as who's joined and churned each ${per}.`}</p></div>`);
   main.appendChild(gHead);
-  const retRow = retentionRow(M); if (retRow) main.appendChild(retRow);
+  const retRow = retentionRow(M, PC); if (retRow) main.appendChild(retRow);
 
   const charts = el("div", "two");
   const c1 = el("section", "card section growth-card", `<div class="section-head"><div><h3>${M.sy ? "Recurring revenue" : "Paying members"}</h3></div></div>`);
@@ -1324,12 +1331,30 @@ function viewDash(main) {
   const box = det.querySelector("#detail");
   ({ funnel: detailFunnel, year: detailYear, speed: detailSpeed, weeks: detailWeeks, compare: detailCompare })[S.detail](box, M, last12);
 }
+/* Monthly churn for the page filter, against the same length of time before (Robbie 16 Nov).
+   7/28 days: cancellations ÷ members at the start, scaled to a month. 3/6/12 months: whole months pooled
+   (cancellations ÷ members at the start of each month), same window as the other boxes. */
+function periodChurn(M, P) {
+  if (!M.sy || M.members === null) return null;
+  const N = { 13: 3, 26: 6, 52: 12 }[P.weeks];
+  if (N) {
+    const ms = M.months, idx = ms.findIndex(m => m.month === M.nowKey); if (idx < 1) return null;
+    // a month where over half the members "left" is payments being moved (new CRM, new prices), not real churn: leave it out
+    const pool = (a, b) => { let l = 0, s = 0, skip = 0, s0 = null; for (let i = Math.max(1, a); i <= b; i++) { const st = n(ms[i - 1].members), lf = n(ms[i].left); if (!st) continue; if (lf > st * 0.5) { skip++; continue; } if (s0 === null) s0 = st; l += lf; s += st; } return s > 0 ? { churn: l / s * 100, left: l, skip, start: s0 } : null; };
+    return { now: pool(idx - N + 1, idx), before: idx - N >= 1 ? pool(idx - 2 * N + 1, idx - N) : null, label: P.label, prevLabel: `the ${N} months before` };
+  }
+  const days = P.weeks * 7, scale = 30.44 / days, start = M.members - P.members, pNet = n(P.prev.new_clients) - n(P.prev.cancellations), pStart = start - pNet;
+  return { now: start > 0 ? { churn: P.left / start * 100 * scale, left: P.left, start } : null, before: pStart > 0 && P.prev.cancellations !== undefined ? { churn: n(P.prev.cancellations) / pStart * 100 * scale, left: n(P.prev.cancellations) } : null, label: P.label, prevLabel: `the ${days === 7 ? "7" : "28"} days before` };
+}
+const SMALL_CHURN = 30; // under 30 members at the start, one cancellation swings the % too much to colour it
+const churnTone = (v, start) => start !== undefined && start !== null && start < SMALL_CHURN ? "" : v <= 5 ? "up" : v > 10 ? "down" : "amber";
+const churnNote = C => [C.now.start !== null && C.now.start !== undefined && C.now.start < SMALL_CHURN ? "Small numbers: one cancellation moves this a lot" : "", C.now.skip ? `${C.now.skip} month${C.now.skip === 1 ? "" : "s"} left out (payments being moved)` : ""].filter(Boolean).join(" · ");
+const churnVs = C => !C || !C.now || !C.before ? "" : `${C.now.churn <= C.before.churn ? "▼" : "▲"} from ${C.before.churn.toFixed(1)}% ${C.prevLabel}`;
 /* Client growth extras: retention, target and who's left */
-function retentionRow(M) {
-  const { RT, info, sy } = M; if (!sy || !RT.real) return null;
-  const since = info.retention?.since, span = since ? Math.max(1, Math.round((Date.now() - parseISO(since)) / (30.44 * 864e5))) : null, pre = RT.floor ? "at least " : "";
-  const row = el("div", "ret-wrap", `<section class="since ret-strip"><div><b>${RT.churn.toFixed(1)}%</b><span>Monthly churn</span><small>Members who leave each month</small></div><div><b>${pre}${RT.months.toFixed(1)} months</b><span>Average stay</span><small>How long a member stays</small></div><div><b>${pre}${fmt(RT.ltv, "gbp0")}</b><span>Lifetime value</span><small>What a member pays you in total</small></div></section>${span && span < 6 ? `<p class="tiny ret-note">Early figures: ${span} month${span === 1 ? "" : "s"} of data so far.</p>` : ""}`);
-  return row;
+function retentionRow(M, PC) {
+  const { RT, sy } = M; if (!sy || !PC || !PC.now) return null;
+  const ch = PC.now.churn, stay = ch > 0 ? 100 / ch : null, fee = n(RT.fee);
+  return el("div", "ret-wrap", `<section class="since ret-strip"><div><b>${ch.toFixed(1)}%</b><span>Monthly churn</span><small>${esc(cap(PC.label))}${churnVs(PC) ? " · " + churnVs(PC) : ""}${churnNote(PC) ? "<br>" + churnNote(PC) : ""}</small></div><div><b>${stay === null ? "—" : stay.toFixed(1) + " months"}</b><span>Average stay</span><small>${stay === null ? "No cancellations in this period" : "If members keep leaving at this rate"}</small></div><div><b>${stay === null ? "—" : fmt(fee * stay, "gbp0")}</b><span>Lifetime value (revenue)</span><small>What a member pays you in total</small></div></section>`);
 }
 function targetLine(M) {
   const p = el("p", "tiny target-line"); // only shown with no target: once set, the progress bar at the top carries the detail
@@ -1341,7 +1366,7 @@ function cancelsCard(M, P) {
   if (!M.sy || !M.info.recent_cancels) return null;
   // same window as the Cancellations box: rolling for 7 and 28 days, whole months from 3 months up
   const months = { "13w": 3, "26w": 6, "52w": 12 }[S.period], now = new Date(), from = months ? iso(new Date(now.getFullYear(), now.getMonth() - months + 1, 1)) : iso(addDays(now, -((S.period === "7d" ? 7 : 28) - 1)));
-  const all = M.info.recent_cancels.filter(x => iso(new Date(x.at)) >= from), list = all.slice(0, 10), period = cap(P.label);
+  const all = M.info.recent_cancels.filter(x => iso(new Date(x.at)) >= from), list = all.slice(0, 5), period = cap(P.label);
   const when = s => new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), stay = m => m < 1 ? "under a month" : Math.round(m) === 1 ? "1 month" : Math.round(m) + " months";
   return el("section", "card section growth-card cancels-card", `<div class="section-head"><div><h3>Recent cancellations</h3><p class="tiny">${period}${list.length ? ". Worth a win-back message." : ""}</p></div></div>${list.length ? `<div class="table-wrap"><table><thead><tr><th>Member</th><th>Left</th><th>Stayed</th><th>Fee</th></tr></thead><tbody>${list.map(x => `<tr><td>${esc(x.name || "Name not in CRM")}</td><td>${when(x.at)}</td><td>${stay(n(x.months))}</td><td class="c-bad">−${fmt(x.fee, "gbp0")}/mo</td></tr>`).join("")}</tbody></table></div>${all.length > list.length ? `<p class="tiny">Showing the latest ${list.length} of ${all.length}.</p>` : ""}` : `<p class="muted small">Nobody's cancelled in the ${esc(P.label)}.</p>`}`);
 }
@@ -1489,7 +1514,7 @@ function greeting(c) { const h = new Date().getHours(); return "Good " + (h < 12
 function membersChart(hist, goal, money) {
   const card = el("div");
   if (hist.length < 2) { card.innerHTML = `<p class="tiny">Needs two months of data.</p>`; return card; }
-  const W = 560, H = 220, L = 34, Rr = 30, Tt = 22, B = 44;
+  const W = 560, H = 220, L = 46, Rr = 46, Tt = 22, B = 44; // 16 Nov: room for "128 members" at the edges
   const val = m => n(money ? m.mrr : m.members), show = v => fmt(v, money ? "gbp0" : "int");
   const top = Math.max(money ? 100 : 5, ...hist.map(val)), drawGoal = goal && goal <= top * 2.5 ? goal : 0; // a far-off target would squash the line
   const maxV = Math.max(top, drawGoal) * 1.12;
