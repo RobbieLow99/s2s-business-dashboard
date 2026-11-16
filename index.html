@@ -625,6 +625,7 @@ html, body, *, *::before, *::after, svg text { font-family: var(--font) !importa
 .pf-ways { margin-top: 4px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .goal-below { margin-top: 12px; }
+.ads5 { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; } .ads5 th, .ads5 td { text-align: center !important; vertical-align: middle; } .ads5 th:first-child, .ads5 td:first-child { text-align: left !important; width: 40%; } .ads5 td:first-child { white-space: normal; } .ads5 thead th { background: rgba(140,82,255,.16); color: var(--fg); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; padding: 12px 10px; border: 0; } .ads5 thead th:first-child { border-radius: 10px 0 0 10px; padding-left: 14px; } .ads5 thead th:last-child { border-radius: 0 10px 10px 0; } .ads5 td:first-child { padding-left: 14px; }
 .goal-inline { display: grid; gap: 12px; justify-items: center; text-align: center; padding: 8px 0; } .goal-inline label { display: grid; gap: 4px; } .gi-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; } .gi-row input { width: 140px; font-size: 18px; font-weight: 700; } .gi-pre, .gi-post { font-weight: 700; color: var(--fg-2); }
 .plan-form[hidden] { display: none; }
 .link-btn { appearance: none; background: none; border: 0; padding: 0; font: 600 13px var(--font); color: var(--accent-2); cursor: pointer; text-decoration: underline; }
@@ -716,13 +717,13 @@ const METRICS = {
   cpl:             { label: "Cost per lead",          fmt: "gbp", dir: "low",  good: 8,  ok: 12 },
   cost_per_client: { label: "Cost to acquire a client (CAC)",   fmt: "gbp", dir: "low",  good: 100, ok: 150 },
   fm_roas:         { label: "First-month ROAS",       fmt: "x",   dir: "high", good: 1,  ok: 0.6 },
-  lt_roas:         { label: "LTGP to CAC",             fmt: "x",   dir: "high", good: 3,  ok: 1 },
+  lt_roas:         { label: "LTGP : CAC",             fmt: "x",   dir: "high", good: 3,  ok: 1 },
   churn:           { label: "Monthly churn",          fmt: "pct", dir: "low",  good: 5,  ok: 8 },
   margin:          { label: "Profit margin",          fmt: "pct", dir: "high", good: 40, ok: 25 },
 };
 const ADVICE = {
   called_5min: "Leads go cold fast. Call from the HighLevel app the minute the alert lands. Calls from your own phone don't count here.",
-  call_book_rate: "Call within 5 minutes and put the booking link in the first text.",
+  call_book_rate: "Call every lead within 5 minutes, and call again if they don't pick up.",
   call_show_rate: "Text them yourself on the morning of the call.",
   call_to_trial: "Find the pain and book the trial while you're on the call.",
   hold_rate: "Hold a spot for every request within 24 hours.",
@@ -731,7 +732,7 @@ const ADVICE = {
   trial_to_client: "Give every parent feedback, send onboarding links the same day and ask for the sale.",
   cpl: "Test two new hooks or creatives before you touch the budget.",
   cost_per_client: "Fix the red step in the funnel before you spend more on ads.",
-  fm_roas: "The first month isn't paying back the ad spend. Fine if clients stay. Check LTGP to CAC.",
+  fm_roas: "The first month isn't paying back the ad spend. Fine if clients stay. Check LTGP : CAC.",
   lt_roas: "Over a client's lifetime you're not making enough back on ads. Fix the funnel or look at your price.",
   churn: "Members are leaving too fast. Every one you lose costs a new lead to replace. Check in with every family monthly.",
   margin: "Too little is left over. Tier 1: look at venue cost per session and group sizes before chasing more clients.",
@@ -846,7 +847,7 @@ function retention(c) {
   const months = Math.max(1, r.member_months / r.members_ever);
   return { real: true, fee, churn: 0, months, ltv: fee * months, floor: true, note: note + ", no cancellations yet", span: spanMonths };
 }
-/* ad maths on gross profit, not revenue (Skok: fee x gross margin / churn; Hormozi: LTGP to CAC at least 3:1).
+/* ad maths on gross profit, not revenue (Skok: fee x gross margin / churn; Hormozi: LTGP : CAC at least 3:1).
    Margin = revenue minus delivery costs (venue, wages, kit) over the last 3 full months with costs entered on Profit & Loss; 40% estimate until then.
    With under 6 months of CRM data (or a typed estimate) the average stay is capped at 12 months. */
 // VAT: standard scheme keeps 100/120 of what members pay; flat rate scheme pays HMRC 8.5% (sport & recreation) of the VAT-inclusive amount. Card fees count as a delivery cost (cost_other is overhead, left out).
@@ -866,20 +867,20 @@ function scaleCard({ lt, fm, cac, limit, costWord = "ad spend", period = "" }) {
   const back = fm ? Math.max(1, Math.ceil(1 / fm)) : null;
   const q = (cls, n, name, fig, say, bench) => `<div class="scale-q ${cls || "none"}"><span class="q-top"><span class="dot"></span>${n}</span><span class="q-name">${name}</span><span class="q-fig">${fig}</span><span class="q-say">${say}</span><span class="q-bench">${bench}</span></div>`;
   const qs = [
-    q(q1, "1. Worth it?", "LTGP to CAC", lt === null ? "—" : lt.toFixed(1) + " : 1", lt === null ? "Needs ad spend and a new client" : q1 === "good" ? `Every £1 brings back £${lt.toFixed(2)} profit. Ads are worth it.` : q1 === "ok" ? `£${lt.toFixed(2)} profit per £1. Not enough room yet.` : `You get back less than you spend. You're losing money.`, "Aim for 3 : 1 or more."),
+    q(q1, "1. Worth it?", "LTGP : CAC", lt === null ? "—" : lt.toFixed(1) + " : 1", lt === null ? "Needs ad spend and a new client" : q1 === "good" ? `Every £1 brings back £${lt.toFixed(2)} profit. Ads are worth it.` : q1 === "ok" ? `£${lt.toFixed(2)} profit per £1. Not enough room yet.` : `You get back less than you spend. You're losing money.`, "Aim for 3 : 1 or more."),
     q(q3, "2. Still working?", "Cost to acquire a customer (CAC)", cac === null ? "—" : g(cac), cac === null ? "Needs ad spend and a new client" : !limit ? "Needs what a client is worth" : q3 === "good" ? `Well under your ${g(limit)} limit.` : q3 === "ok" ? `Getting close to your ${g(limit)} limit.` : cac <= limit ? `Nearly at your ${g(limit)} limit.` : `Over your ${g(limit)} limit.`, limit ? `Raise spend under ${g(limit * 0.5)} · hold ${g(limit * 0.5)} to ${g(limit * 0.8)} · fix the leak over ${g(limit * 0.8)}` : "Limit = what a client is worth ÷ 3"),
     q(q2, "3. Can I afford it?", "First-month ROAS", fm === null ? "—" : x(fm), fm === null ? "Needs ad spend and a new client" : q2 === "good" ? "Clients pay back their cost in month one. Ads pay for themselves." : `Paid back in about ${back} month${back === 1 ? "" : "s"}. ${q2 === "ok" ? "Keep about a month of ad costs in the bank." : "Scaling will drain your cash."}`, "1x or more pays for itself. 0.5x to 1x: keep a cash buffer."),
   ].join("");
   const [cls, head, sub] = scaleVerdict(q1, q2, q3);
   return `<div class="scale-card"><div class="scale-verdict ${cls}"><span class="dot"></span><div>${head}<small>${sub}</small></div></div><div class="scale-qs">${qs}</div><p class="tiny">${period ? esc(period) + ". " : ""}Check it every Monday. Raise spend in small steps, because cost per client usually rises as you spend more. Costs include ${esc(costWord)}.</p></div>`;
 }
-/* q1 LTGP to CAC, q2 first-month ROAS, q3 CAC: each "good" / "ok" / "bad" / null */
+/* q1 LTGP : CAC, q2 first-month ROAS, q3 CAC: each "good" / "ok" / "bad" / null */
 function scaleVerdict(q1, q2, q3) {
   const all = [q1, q2, q3];
   return all.includes(null) ? ["none", "Not enough data yet", "You need ad spend and at least one new client from ads to answer all three."]
-    : q1 === "bad" || q3 === "bad" ? ["bad", "Don't raise your budget. Fix the leak first.", q1 === "bad" ? "Your ads lose money over a client's lifetime. Turn off your worst ads, then fix the leak: the ad, your follow-up or your price." : "Clients are costing too much. Find the leak: the ad, booking, show-up or close rate."]
+    : q1 === "bad" || q3 === "bad" ? ["bad", "Fix the leak first, then scale.", q1 === "bad" ? "Your ads lose money over a client's lifetime. Turn off your worst ads, then fix the leak: the ad, your follow-up or your price." : "Clients are costing too much. Find the leak: the ad, booking, show-up or close rate."]
     : q1 === "good" && q3 === "good" && q2 !== "bad" ? ["good", "Scale: raise your daily budget 20 to 30% this week.", q2 === "good" ? "All three are green. Check again next Monday." : "Keep about a month of ad costs in the bank, because clients take a while to pay you back."]
-    : ["ok", "Hold your budget. Fix the amber one first.", q2 === "bad" ? "Ads are profitable, but you'll run short of cash if you scale now." : "Get it back to green, then start raising spend again."];
+    : ["ok", "Scale cautiously: small steps, and fix the amber one.", q2 === "bad" ? "Ads are profitable, but you'll run short of cash if you scale now." : "Get it back to green, then start raising spend again."];
 }
 function adMaths(c) {
   if (_adm.has(c)) return _adm.get(c);
@@ -1889,18 +1890,18 @@ function paidAds(main, mode = "stats") {
     const fmCash = pJoined ? pJoined * A.fee : null, fmX = spend && fmCash ? fmCash / spend : null, fmBack = fmX ? Math.max(1, Math.ceil(1 / fmX)) : null;
     const b0 = fmX === null ? box("First-month ROAS", "plain", "—", "", why)
       : box("First-month ROAS", bandFm(fmX), xFmt(fmX), `${fmt(fmCash, "gbp0")} back from ${fmt(spend, "gbp0")}`, fmX >= 1 ? "Ads pay for themselves in month one" : `Takes about ${fmBack} months to get your money back`);
-    const b1 = ltvX === null || !pJoined ? box("LTGP to CAC", "plain", "—", "", why)
-      : box("LTGP to CAC", bandLt(ltvX), ltvX.toFixed(1) + " : 1", `${fmt(pJoined * adLtv, "gbp0")} profit from ${fmt(spend, "gbp0")}`, ltvX >= 3 ? "Ads are worth it" : ltvX >= 1 ? "Making money, but not enough yet" : "Losing money. Fix before you spend more");
+    const b1 = ltvX === null || !pJoined ? box("LTGP : CAC", "plain", "—", "", why)
+      : box("LTGP : CAC", bandLt(ltvX), ltvX.toFixed(1) + " : 1", `${fmt(pJoined * adLtv, "gbp0")} profit from ${fmt(spend, "gbp0")}`, ltvX >= 3 ? "Ads are worth it" : ltvX >= 1 ? "Making money, but not enough yet" : "Losing money. Fix before you spend more");
     const b2 = cpm === null ? box("Cost to acquire a customer (CAC)", "plain", "—", worth ? `Limit ${fmt(worth, "gbp0")}` : "", why)
       : box("Cost to acquire a customer (CAC)", bandCac(cpm), fmt(cpm, "gbp0"), worth ? `Limit ${fmt(worth, "gbp0")}` : "", !worth ? "" : cpm <= worth * 0.5 ? "Well under your limit" : cpm <= worth * 0.8 ? "Getting close to your limit" : cpm <= worth ? "Nearly at your limit" : "Over your limit");
-    const pc = v => Math.round(v * 100) + "%", tone = { "CAC": cpm === null ? "" : "c-" + bandCac(cpm), "First-month ROAS": fmX === null ? "" : "c-" + bandFm(fmX), "LTGP to CAC": ltvX === null || !pJoined ? "" : "c-" + bandLt(ltvX) }; let step = 0;
+    const pc = v => Math.round(v * 100) + "%", tone = { "CAC": cpm === null ? "" : "c-" + bandCac(cpm), "First-month ROAS": fmX === null ? "" : "c-" + bandFm(fmX), "LTGP : CAC": ltvX === null || !pJoined ? "" : "c-" + bandLt(ltvX) }; let step = 0;
     const line = (l, plain, sum, res, why) => `<div class="how-row"><span class="how-n">${++step}</span><div class="how-t"><b>${l}</b><small class="how-plain">${plain}</small></div><b class="how-res ${tone[l] || ""}">${res}</b>${why ? `<div class="how-why">${why}</div>` : ""}${sum ? `<span class="how-sum">${sum}</span>` : ""}</div>`;
     const marginNote = A.marginReal ? `Margin from your costs (last ${A.marginMonths === 1 ? "month" : A.marginMonths + " months"}, less ~2% card fees).` : A.marginTyped ? "Margin is your figure from Settings." : `<span class="est">Margin is a 40% estimate. Add your monthly costs in Settings for the real one.</span>`;
     const ppl = k => `${fmt(k, "int")} new ${k === 1 ? "member" : "members"}`;
     const howTo = worth ? `<details class="ads-how"><summary><span class="how-q">?</span>What these numbers mean and why they matter</summary><div class="how-grid">
       ${line("Profit per member", "what one member is worth to you", `${fmt(A.fee, "gbp0")}/month${A.vat ? " " + VAT_LABEL[A.vat] : ""} × ${A.months.toFixed(1)} months × ${pc(A.margin)} margin`, fmt(A.ltgp, "gbp0"), `A member pays you ${g0(A.fee)} a month and stays about ${A.months.toFixed(0)} months, so ${g0(A.fee * A.months)} in total. After your costs (venue, coaches, kit) you keep ${pc(A.margin)} of that. So each member is worth <b>${g0(A.ltgp)}</b> profit to you.`)}
       ${line("CAC limit", "the most to spend on ads to get one member", `${fmt(A.ltgp, "gbp0")} ÷ 3`, fmt(worth, "gbp0"), `Never spend more than a third of a member's profit to get them. A third of ${g0(A.ltgp)} is <b>${g0(worth)}</b>. That leaves you ${g0(A.ltgp - worth)} from every member to cover tax and pay yourself.`)}
-      ${line("LTGP to CAC", "is advertising worth it?", ltvX !== null && pJoined ? `${fmt(pJoined * adLtv, "gbp0")} profit ÷ ${fmt(spend, "gbp0")} ads · aim 3 : 1 or more` : why, ltvX !== null && pJoined ? ltvX.toFixed(1) + " : 1" : "—", `${ltvX !== null && pJoined ? `Your ${ppl(pJoined)} will make you ${g0(pJoined * adLtv)} profit over the time they stay. You spent ${g0(spend)} on ads. So every £1 on ads makes you <b>${g1(ltvX)}</b> back. ` : "How much profit every £1 of ads makes you over the whole time those members stay. "}<ul class="how-bands"><li><i class="c-good"></i><span class="c-good">3 : 1 or more</span> ads are worth it</li><li><i class="c-ok"></i><span class="c-ok">1 to 3</span> making money, but not enough to scale yet</li><li><i class="c-bad"></i><span class="c-bad">Under 1</span> you're losing money: turn off your worst ads and fix the leak</li></ul>`)}
+      ${line("LTGP : CAC", "is advertising worth it?", ltvX !== null && pJoined ? `${fmt(pJoined * adLtv, "gbp0")} profit ÷ ${fmt(spend, "gbp0")} ads · aim 3 : 1 or more` : why, ltvX !== null && pJoined ? ltvX.toFixed(1) + " : 1" : "—", `${ltvX !== null && pJoined ? `Your ${ppl(pJoined)} will make you ${g0(pJoined * adLtv)} profit over the time they stay. You spent ${g0(spend)} on ads. So every £1 on ads makes you <b>${g1(ltvX)}</b> back. ` : "How much profit every £1 of ads makes you over the whole time those members stay. "}<ul class="how-bands"><li><i class="c-good"></i><span class="c-good">3 : 1 or more</span> ads are worth it</li><li><i class="c-ok"></i><span class="c-ok">1 to 3</span> making money, but not enough to scale yet</li><li><i class="c-bad"></i><span class="c-bad">Under 1</span> you're losing money: turn off your worst ads and fix the leak</li></ul>`)}
       ${line("CAC", "what one new member costs you in ads", cpm !== null ? `${fmt(spend, "gbp0")} ad spend ÷ ${ppl(pJoined)}` : why, cpm !== null ? fmt(cpm, "gbp0") : "—", `${cpm !== null ? `You spent ${g0(spend)} on ads and ${fmt(pJoined, "int")} ${pJoined === 1 ? "person" : "people"} joined, so each member cost you <b>${g0(cpm)}</b>. ` : ""}Your limit is ${g0(worth)}. Judge your ads on this, not cost per lead: a cheap lead is worth nothing if they never join.<ul class="how-bands"><li><i class="c-good"></i><span class="c-good">Under ${g0(worth * 0.5)}</span> spend more</li><li><i class="c-ok"></i><span class="c-ok">${g0(worth * 0.5)} to ${g0(worth * 0.8)}</span> hold your budget</li><li><i class="c-bad"></i><span class="c-bad">Over ${g0(worth * 0.8)}</span> don't add budget: find the leak (the verdict above tells you where)</li></ul>`)}
       ${line("First-month ROAS", "can you afford to keep spending?", fmX !== null ? `${fmt(fmCash, "gbp0")} first month ÷ ${fmt(spend, "gbp0")} ads · aim 1× or more` : why, fmX !== null ? xFmt(fmX) : "—", `${fmX !== null ? `Your ${ppl(pJoined)} paid you ${g0(fmCash)} in their first month. You spent ${g0(spend)}. So every £1 on ads came back as <b>${g1(fmX)}</b> within a month. ` : "How much of your ad spend comes back in the new members' first month. "}<ul class="how-bands"><li><i class="c-good"></i><span class="c-good">1× or more</span> ads pay for themselves straight away</li><li><i class="c-ok"></i><span class="c-ok">0.5× to 1×</span> you get it back in a month or two, so keep a month of ad spend in the bank</li><li><i class="c-bad"></i><span class="c-bad">Under 0.5×</span> ads will drain your cash</li></ul>`)}</div>
       <p class="tiny">${marginNote} ${A.RT.real ? `Average stay from your CRM${A.early ? ", early data, so treat as rough" : ""}${A.capped ? " (capped at 12 months)" : ""}.` : "Average stay is your estimate from Settings."} Tax isn't taken off: it comes out of profit at the end, which is why the limit is only a third.</p></details>` : "";
@@ -1914,7 +1915,7 @@ function paidAds(main, mode = "stats") {
     const leak = () => { // Robbie 16 Nov: never a blanket "pull back", say where the money leaks (first step under target)
       const bad = k => D[k] !== null && D[k] !== undefined && T[k] && rag(k, D[k], T) === "bad";
       if (cpl !== null && rag("cpl", cpl, T) === "bad") return `Your leads cost ${fmt(cpl, "gbp")} each. Test two new ads before you touch the budget.`;
-      if (bad(nocall ? "hold_rate" : "call_book_rate")) return "Leads aren't booking. Call every lead within 5 minutes and put the booking link in your first text.";
+      if (bad(nocall ? "hold_rate" : "call_book_rate")) return "Leads aren't booking. Call every lead within 5 minutes, and call again if they don't pick up.";
       if (bad(nocall ? "show_rate" : "call_show_rate")) return "People book but don't turn up. Check your reminder texts are going out.";
       return "Leads book and turn up but don't join. Tighten your trial and follow up the same night.";
     };
@@ -1942,7 +1943,7 @@ function paidAds(main, mode = "stats") {
   } else tRows = last.slice(mode === "log" ? -8 : -({ "7d": 1, "4w": 4 }[S.chPeriod] || 13)).reverse().map(({ wk, w }) => ({ label: weekLabel(wk), wk, ...rowOf(w) }));
   // editable table
   const tb = el("section", mode === "log" ? "" : "section divided", `${mode === "log" ? `<p class="tiny" style="margin-bottom:8px">${metaOn(c) ? `Comes straight from your Meta ad account every night (last synced ${ago(c.meta.synced_at)}). Nothing to type.` : "Type each week's spend from Meta Ads Manager (Monday to Sunday). Saves when you click away."}</p>` : `<div class="section-head"><div><h2>${byMonth ? "Month by month" : "Week by week"}</h2><p class="lead-sub">${esc(periodName)}.${readOnly() ? "" : " Type your weekly ad spend in your Business Log."}</p></div></div>`}
-  <div class="table-wrap ch-table" id="ads-weeks"><table><thead><tr><th>${byMonth ? "Month" : "Week"}</th><th>Ad spend</th><th>Leads</th>${mode === "log" ? "" : "<th>New members</th><th>CAC</th><th>First-month ROAS</th><th>LTGP to CAC</th>"}</tr></thead><tbody>
+  <div class="table-wrap ch-table" id="ads-weeks"><table><thead><tr><th>${byMonth ? "Month" : "Week"}</th><th>Ad spend</th><th>Leads</th>${mode === "log" ? "" : "<th>New members</th><th>CAC</th><th>First-month ROAS</th><th>LTGP : CAC</th>"}</tr></thead><tbody>
   ${tRows.map(({ label, wk, sp, al, nc, raw }) => { const x = sp && nc !== null && adLtv ? nc * adLtv / sp : null, f1 = sp && nc !== null ? nc * A.fee / sp : null;
     return `<tr><td>${label}</td><td>${!edit ? fmt(sp, "gbp0") : `<input class="spend-in" data-wk="${wk}" type="number" inputmode="decimal" min="0" step="0.01" placeholder="£" value="${sp === null ? "" : esc(raw)}" aria-label="Ad spend ${label}">`}</td>
       <td>${fmt(al, "int")}</td>${mode === "log" ? "" : `<td>${nc === null ? "—" : fmt(nc, "int")}</td><td class="${sp !== null && nc && worth ? (sp / nc <= worth ? "c-good" : "c-bad") : ""}">${sp !== null && nc ? fmt(sp / nc, "gbp0") : "—"}</td>`}${mode === "log" ? "" : `<td class="${f1 === null ? "" : f1 >= 1 ? "c-good" : ""}">${f1 === null ? "—" : xFmt(f1)}</td><td class="${x === null ? "" : x >= 3 ? "c-good" : x >= 1 ? "c-ok" : "c-bad"}">${x === null ? "—" : xFmt(x)}</td>`}</tr>`; }).join("")}
@@ -1981,7 +1982,7 @@ function realAdSection(c) {
   const row = a => { const cpl = a.leads ? a.spend / a.leads : null, hook = a.video && a.impressions ? a.plays3s / a.impressions * 100 : null, [vc, vt] = verdict(a), off = a.status && a.status !== "ACTIVE";
     return `<tr${off ? ' class="muted"' : ""}><td>${esc(a.name)}${off ? ` <span class="pill none">${a.status === "PAUSED" || a.status === "CAMPAIGN_PAUSED" || a.status === "ADSET_PAUSED" ? "off" : esc(String(a.status).toLowerCase().replace(/_/g, " "))}</span>` : ""}<br><small class="muted">${esc(a.campaign || "")}</small></td><td>${money(a.spend)}</td><td>${a.leads}</td><td class="${cpl === null || !avg ? "" : cpl <= avg ? "c-good" : cpl <= avg * 1.5 ? "c-ok" : "c-bad"}">${cpl === null ? "—" : money(cpl)}</td><td><span class="pill ${vc}">${vt}</span></td></tr>`; };
   const sec = el("section", "section divided", `<div class="section-head"><div><h2>Ad by ad</h2><p class="lead-sub">Last 28 days, straight from your Meta ad account${m.account ? ` (${esc(m.account)})` : ""}. Synced ${ago(m.synced_at)}.</p></div></div>
-    <div class="table-wrap card"><table><thead><tr><th>Ad</th><th>Spend</th><th>Leads</th><th>Cost per lead</th><th>Verdict</th></tr></thead><tbody>
+    <div class="table-wrap card"><table class="ads5"><thead><tr><th>Ad</th><th>Spend</th><th>Leads</th><th>Cost per lead</th><th>Verdict</th></tr></thead><tbody>
     ${shown.map(row).join("")}
     <tr><td><b>All ads${ads.length > shown.length ? ` (${ads.length})` : ""}</b></td><td><b>${money(T.spend)}</b></td><td><b>${T.leads}</b></td><td><b>${avg ? money(avg) : "—"}</b></td><td></td></tr>
     </tbody></table></div>
@@ -2003,7 +2004,7 @@ function exampleAdTable() {
   const avgCpl = T.spend / T.leads, limit = 1000 * DEFAULT_MARGIN / 3, g = (v, good, ok) => v >= good ? "c-good" : v >= ok ? "c-ok" : "c-bad";
   const row = r => { const freq = r.imp / r.reach, cpl = r.spend / r.leads;
     return `<tr><td>${esc(r.ad)}</td><td>£${r.spend}</td><td>${r.leads}</td><td class="${cpl <= avgCpl ? "c-good" : cpl <= avgCpl * 1.5 ? "c-ok" : "c-bad"}">£${cpl.toFixed(2)}</td><td><span class="pill ${r.verdict[0]}">${r.verdict[1]}</span></td></tr>`; };
-  return `<div class="table-wrap preview"><table><thead><tr><th>Ad</th><th>Spend</th><th>Leads</th><th>Cost per lead</th><th>Verdict</th></tr></thead><tbody>
+  return `<div class="table-wrap preview"><table class="ads5"><thead><tr><th>Ad</th><th>Spend</th><th>Leads</th><th>Cost per lead</th><th>Verdict</th></tr></thead><tbody>
     ${EXAMPLE_ADS.map(row).join("")}
     <tr><td><b>All ads</b></td><td><b>£${T.spend}</b></td><td><b>${T.leads}</b></td><td><b>£${avgCpl.toFixed(2)}</b></td><td></td></tr>
   </tbody></table></div>`;
@@ -2054,7 +2055,7 @@ const CHANNEL_DEFS = {
     tip: "Low replies? Change your first message. Replies but no bookings? Push for the call sooner." },
   social: { name: "Social media", mode: "week", how: "Each day, put what you posted and where enquiries came from. Once a week, name your best post and log bookings.",
     fields: [["best", "Best post this week", "The one that brought the most messages", "text"], ["booked", "Booked", "Call or trial"], ATTENDED, ["joined", "New members", "Became paying members"]],
-    tiles: (s, fee) => [...(s.views ? [["Views", fmt(s.views, "k"), `${fmt(s.enquiries ? s.views / s.enquiries : null, "k")} views per enquiry · +${fmt(s.newFollowers, "int")} followers`]] : []), ["Posts and Reels", fmt(s.posts, "int"), `+ ${fmt(s.stories, "int")} Stories${s.daysPosted !== undefined ? ` · posted ${s.daysPosted} of ${s.daysIn} days` : ""}`], ["Enquiries", fmt(s.enquiries, "int"), `${perOne(s.enquiries, s.posts)} per post`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.enquiries)} of enquiries`], ["Showed up", fmt(s.attended, "int"), `${pctOf(s.attended, s.booked)} of bookings`], ["New members", fmt(s.joined, "int"), `${pctOf(s.joined, s.attended)} joined`], ["MRR added", fee ? fmt(s.joined * fee, "gbp0") : "—", fee ? `at ${fmt(fee, "gbp0")} each` : "Add your fee in Settings", fee && s.joined > 0 ? "ros-cell up" : ""]], keyInTiles: true, noHist: true,
+    tiles: (s, fee) => [...(s.views ? [["Views", fmt(s.views, "k"), `${fmt(s.enquiries ? s.views / s.enquiries : null, "k")} per enquiry<br>+${fmt(s.newFollowers, "int")} followers`]] : []), ["Posts and Reels", fmt(s.posts, "int"), `+${fmt(s.stories, "int")} Stories${s.daysPosted !== undefined ? `<br>${s.daysPosted} of ${s.daysIn} days` : ""}`], ["Enquiries", fmt(s.enquiries, "int"), `${perOne(s.enquiries, s.posts)} per post`], ["Booked", fmt(s.booked, "int"), `${pctOf(s.booked, s.enquiries)} of enquiries`], ["Showed up", fmt(s.attended, "int"), `${pctOf(s.attended, s.booked)} of bookings`], ["New members", fmt(s.joined, "int"), `${pctOf(s.joined, s.attended)} joined`], ["MRR added", fee ? fmt(s.joined * fee, "gbp0") : "—", fee ? `at ${fmt(fee, "gbp0")} each` : "Add your fee in Settings", fee && s.joined > 0 ? "ros-cell up" : ""]], keyInTiles: true, noHist: true,
     key: s => ["posts per enquiry", perOne(n(s.posts) + n(s.stories), s.enquiries), "posts and Stories it takes to get one parent messaging"],
     tip: "A post that took off? Run it as an ad. Messages but no bookings? See where they go quiet." },
   referral: { name: "Referrals", mode: "week", how: "Add every friend to My referrals as they get in touch. Once a week, log how many families you asked.",
@@ -3011,7 +3012,7 @@ function viewS2SAds(main) {
     card("Ad spend", sp === null ? "—" : fmt(sp, "gbp0"), AM && setter ? `+ ${fmt(setter + AM.all.comm, "gbp0")} setter pay + commission` : "", "", sp === null ? "Add it in the Monday box" : `${cap(label)}${AM ? " · from Meta" : ""}`),
     card("Cost per booked call", fmt(xCall, "gbp"), xHeld !== null ? `${fmt(xHeld, "gbp")} per call held` : "", "", xCpl === null ? (AM ? "No ad leads yet" : "Needs ad spend") : `${fmt(xCpl, "gbp")} per lead${AM ? ` · ${AM.all.booked} call${AM.all.booked === 1 ? "" : "s"} from ads and DMs` : ""}`),
     card("Cost to win a client", fmt(xCac, "gbp0"), W.cap ? `Spend up to ${fmt(W.cap, "gbp0")}` : "", cacTone, xCac === null ? (sp === null ? "Needs ad spend" : AM ? "No clients from ads or DMs yet" : "No new clients yet") : `${AM ? `${AM.all.won} client${AM.all.won === 1 ? "" : "s"} from ads and DMs, incl. setter and commission. ` : ""}${cacTone === "up" ? "Under your limit: room to spend more" : "Over your limit: fix the funnel first"}`),
-    card("LTGP to CAC", xLt === null ? "—" : xLt.toFixed(1) + " : 1", xFm !== null ? `${xFm.toFixed(1)}x back in month one` : "", xLt === null ? "" : xLt >= 3 ? "up" : xLt >= 1 ? "" : "down", xLt === null ? `Needs ad spend and a client${src ? " from ads or DMs" : ""}` : `£${xLt.toFixed(2)} profit back for every £1 · lifetime`),
+    card("LTGP : CAC", xLt === null ? "—" : xLt.toFixed(1) + " : 1", xFm !== null ? `${xFm.toFixed(1)}x back in month one` : "", xLt === null ? "" : xLt >= 3 ? "up" : xLt >= 1 ? "" : "down", xLt === null ? `Needs ad spend and a client${src ? " from ads or DMs" : ""}` : `£${xLt.toFixed(2)} profit back for every £1 · lifetime`),
   ].join("")}</div></div>`));
   main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>Can I scale my ads?</h2><p class="lead-sub">Three questions. Green on all three means raise your budget.</p></div></div>${scaleCard({ lt: xLt, fm: xFm, cac: xCac, limit: W.cap, costWord: AM ? "ads, setter pay and commission" : "ad spend", period: cap(label) })}`));
   if (AM) main.appendChild(s2sScorecard(d, W, AM));
@@ -3123,7 +3124,7 @@ function s2sThreeWay(AM, W, label, setter = 0) {
     ${row("Clients won", `${F.won} <small class="muted">from DMs</small>`, Ld.won, A.won)}
     ${row("Cost per client", money(per(F.spend, F.won)), money(per(Ld.spend, Ld.won)), money(per(A.spend, A.won)), [cacCls(per(F.spend, F.won)), cacCls(per(Ld.spend, Ld.won)), cacCls(per(A.spend, A.won))])}
     ${row("ROAS, month one", x(ro(F, 1)), x(ro(Ld, 1)), x(ro(A, 1)), [tone(ro(F, 1)), tone(ro(Ld, 1)), tone(ro(A, 1))])}
-    ${row("LTGP to CAC", x(ro(F)), x(ro(Ld)), x(ro(A)), [tone(ro(F)), tone(ro(Ld)), tone(ro(A))])}
+    ${row("LTGP : CAC", x(ro(F)), x(ro(Ld)), x(ro(A)), [tone(ro(F)), tone(ro(Ld)), tone(ro(A))])}
   </tbody></table></div>
   <section class="since ret-strip s2s-funnel" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-top:14px">
     <div><b>${money(cpf)}</b><span>Cost per follow</span><small>${F.followDays ? `${money(F.spendOnFollowDays)} on follower ads ÷ ${fmt(F.follows, "int")} new followers${fSince}` : "Builds up from tonight's sync"}</small></div>
@@ -3131,7 +3132,7 @@ function s2sThreeWay(AM, W, label, setter = 0) {
     <div class="${maxPerFollow !== null && cpf !== null ? (cpf <= maxPerFollow ? "ros-cell up" : "ros-cell down") : ""}"><b>${money(maxPerFollow)}</b><span>Most you can pay per follow</span><small>${maxPerFollow === null ? "Your £" + fmt(W.cap || 0, "int") + " limit ÷ followers per client" : cpf !== null && cpf <= maxPerFollow ? "You're under it: room to spend more" : "You're over it: cheaper follows or better DMs"}</small></div>
   </section>
   ${s2sFollowChart(AM)}
-  <p class="tiny ret-note">LTGP to CAC is profit, not revenue: each client is worth ${worth ? fmt(worth, "gbp0") : "—"} in gross profit (${W.arpu ? `new clients since 1 Sep pay £${fmt(Math.round(W.arpu), "int")} a month × ${Math.round(W.margin * 100)}% margin ÷ ${(W.churn.rate * 100).toFixed(1)}% monthly revenue churn (mentorship clients, CRM included) over the last ${CHURN_MONTHS} months, ${W.churn.capped ? `capped at ${W.stay.toFixed(1)} months, the age of the mentorship` : `about ${W.stay.toFixed(1)} months`}` : ""}). Total cost includes your setter's commission (${Math.round(COMM_DM * 100)}% of the first month on DM clients, ${Math.round(COMM_LEAD * 100)}% on lead-ad clients; CRM included on the £400 and £500 packages, mentorship only on others); the whole-account column also counts his £${fmt(SETTER_MONTHLY, "int")} a month pay from 1 Sep. Month one uses each client's first payment from your CRM, or £${FIRST_MONTH_DEFAULT} where none is set. New followers are all new followers on Instagram, so organic follows are in there too. Instagram only gives 30 days of follower history, so follower numbers start from ${F.followFrom ? shortDate(F.followFrom) : "the first sync"} and grow from there; cost per follow uses follower-ad spend on those same days only. DM calls and clients are contacts tagged "scaling call booked" or that came in through an Instagram DM, with no ad ID. Lead ads only count leads that carry the ad ID; older untracked ads are left out of the lead-ad column.</p>`;
+  <p class="tiny ret-note">LTGP : CAC is profit, not revenue: each client is worth ${worth ? fmt(worth, "gbp0") : "—"} in gross profit (${W.arpu ? `new clients since 1 Sep pay £${fmt(Math.round(W.arpu), "int")} a month × ${Math.round(W.margin * 100)}% margin ÷ ${(W.churn.rate * 100).toFixed(1)}% monthly revenue churn (mentorship clients, CRM included) over the last ${CHURN_MONTHS} months, ${W.churn.capped ? `capped at ${W.stay.toFixed(1)} months, the age of the mentorship` : `about ${W.stay.toFixed(1)} months`}` : ""}). Total cost includes your setter's commission (${Math.round(COMM_DM * 100)}% of the first month on DM clients, ${Math.round(COMM_LEAD * 100)}% on lead-ad clients; CRM included on the £400 and £500 packages, mentorship only on others); the whole-account column also counts his £${fmt(SETTER_MONTHLY, "int")} a month pay from 1 Sep. Month one uses each client's first payment from your CRM, or £${FIRST_MONTH_DEFAULT} where none is set. New followers are all new followers on Instagram, so organic follows are in there too. Instagram only gives 30 days of follower history, so follower numbers start from ${F.followFrom ? shortDate(F.followFrom) : "the first sync"} and grow from there; cost per follow uses follower-ad spend on those same days only. DM calls and clients are contacts tagged "scaling call booked" or that came in through an Instagram DM, with no ad ID. Lead ads only count leads that carry the ad ID; older untracked ads are left out of the lead-ad column.</p>`;
   return box;
 }
 function s2sFollowChart(AM) {
@@ -3239,7 +3240,7 @@ function viewAdmin(main) {
     card("Total revenue", fmt(rev, "gbp0"), revG !== null ? `${gbpCh(revG)} ${P0.revNote}` : "", revG === null ? "" : toneOf(revG), revG === null ? cap(label) : ""),
     card("Monthly recurring revenue", fmt(mrr, "gbp0"), `${gbpCh(mrrNet)} net ${inP}`, toneOf(mrrNet), ""),
     card("Paying members", fmt(members, "int"), `${memNet > 0 ? "+" : ""}${memNet} net ${inP}`, toneOf(memNet), ""),
-    card("LTGP to CAC", back === null ? "—" : back.toFixed(1) + "x", "", back === null ? "" : back >= 1 ? "up" : "down", back === null ? "Needs ad spend from coaches" : `£${back.toFixed(2)} profit back for every £1 · lifetime`),
+    card("LTGP : CAC", back === null ? "—" : back.toFixed(1) + "x", "", back === null ? "" : back >= 1 ? "up" : "down", back === null ? "Needs ad spend from coaches" : `£${back.toFixed(2)} profit back for every £1 · lifetime`),
   ].join("")}</div></div>`));
   main.insertAdjacentHTML("beforeend", sinceStrip({ info: {}, c: { flow: "call" } }, { cur, label, key: "all", money: true, feesLeft, feesAdded }) + `<p class="tiny live-note">Live from ${connected} coach${connected === 1 ? "'s CRM" : "es' CRMs"}<button type="button" class="refresh-btn" id="refresh">Refresh</button><button type="button" class="refresh-btn" id="to-manage">Coaches &amp; links</button></p>`);
   main.querySelector("#to-manage").addEventListener("click", () => { S.tab = "manage"; render(); scrollTo(0, 0); });
@@ -3305,7 +3306,7 @@ function viewAdmin(main) {
   const board = (title, sub, rowsL, fmtV) => `<div class="card board growth-card"><h3>${title}</h3><p class="tiny">${sub}</p>${rowsL.length ? `<ol>${rowsL.map((r, i) => `<li><span class="rank r${i + 1}">${i + 1}</span><span class="who">${esc(r.x.c.business || r.x.c.name)}</span><b>${fmtV(r.v)}</b></li>`).join("")}</ol>` : `<p class="muted small">Nobody yet.</p>`}</div>`;
   main.appendChild(el("section", "section divided", `<div class="section-head"><div><h2>Leaderboard</h2><p class="lead-sub">Who's winning this month.</p></div></div>
   <div class="boards">
-    ${board("LTGP to CAC", "Needs ad spend entered", rank(x => x.D12.lt_roas, x => x.s12.spend_weeks > 0 && x.s12.new_clients > 0), v => v.toFixed(1) + "x")}
+    ${board("LTGP : CAC", "Needs ad spend entered", rank(x => x.D12.lt_roas, x => x.s12.spend_weeks > 0 && x.s12.new_clients > 0), v => v.toFixed(1) + "x")}
     ${board(`New members in ${monthShort(monthKey(new Date()))}`, "Joined this month", rank(x => x.nowM ? x.nowM.joined : null, () => true), v => "+" + v)}
     ${board("Member growth", "Net this month", rank(x => x.members !== null && x.membersPrev !== null ? x.members - x.membersPrev : null, () => true), v => (v > 0 ? "+" : "") + v)}
   </div>`));
